@@ -72,6 +72,15 @@ static void zfastlibFree(zfast_stream_s *s) {
   }
 }
 
+static void zfastlibReset(zfast_stream_s *s) {
+  s->msg = NULL;
+  s->inBuffOffs = 0;
+  s->outBuffOffs = 0;
+  s->inHdrOffs = 0;
+  s->str_size =  0;
+  s->dec_size =  0;
+}
+
 /* initialize private fields */
 static int zfastlibInit(zfast_stream_s *s) {
   if (s->zalloc == NULL) {
@@ -82,13 +91,8 @@ static int zfastlibInit(zfast_stream_s *s) {
   }
   s->inBuff = s->zalloc(s->opaque, BUFFER_BLOCK_SIZE, 1);
   s->outBuff = s->zalloc(s->opaque, BUFFER_BLOCK_SIZE, 1);
-  s->msg = NULL;
-  s->inBuffOffs = 0;
-  s->outBuffOffs = 0;
-  s->inHdrOffs = 0;
-  s->str_size =  0;
-  s->dec_size =  0;
   if (s->inBuff != NULL && s->outBuff != NULL) {
+    zfastlibReset(s);
     return Z_OK;
   }
   zfastlibFree(s);
@@ -129,6 +133,22 @@ int zfastlibDecompressEnd(zfast_stream_s *s) {
     return Z_STREAM_ERROR;
   }
   zfastlibFree(s);
+  return Z_OK;
+}
+
+int zfastlibCompressReset(zfast_stream_s *s) {
+  if (s == NULL) {
+    return Z_STREAM_ERROR;
+  }
+  zfastlibReset(s);
+  return Z_OK;
+}
+
+int zfastlibDeompressReset(zfast_stream_s *s) {
+  if (s == NULL) {
+    return Z_STREAM_ERROR;
+  }
+  zfastlibReset(s);
   return Z_OK;
 }
 

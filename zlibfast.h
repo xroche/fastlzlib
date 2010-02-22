@@ -98,6 +98,20 @@ ZFASTEXTERN int zfastlibCompressEnd(zfast_stream_s *s);
 ZFASTEXTERN int zfastlibDecompressEnd(zfast_stream_s *s);
 
 /**
+ * Reset.
+ * Returns Z_OK upon success.
+ * (zlib equivalent: deflateReset)
+ **/
+ZFASTEXTERN int zfastlibCompressReset(zfast_stream_s *s);
+
+/**
+ * Reset.
+ * Returns Z_OK upon success.
+ * (zlib equivalent: inflateReset)
+ **/
+ZFASTEXTERN int zfastlibDecompressReset(zfast_stream_s *s);
+
+/**
  * Decompress.
  * (zlib equivalent: inflate)
  **/
