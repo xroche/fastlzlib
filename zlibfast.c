@@ -8,11 +8,14 @@
 #include "zlibfast.h"
 #include "fastlz.c"
 
-#define MIN_BLOCK_SIZE    64
-#define HEADER_SIZE       16
+#define MIN_BLOCK_SIZE      64
+/* note: the 5% ratio (/20) is not always true */
+#define EXPANSION_RATIO     10
+#define EXPANSION_SECURITY  66
+#define HEADER_SIZE         16
 #define MAX_BLOCK_SIZE 32768
 #define BUFFER_BLOCK_SIZE \
-  ( MAX_BLOCK_SIZE + MAX_BLOCK_SIZE / 10 + HEADER_SIZE*2)
+  ( MAX_BLOCK_SIZE + MAX_BLOCK_SIZE / EXPANSION_RATIO + HEADER_SIZE*2)
 
 #define BLOCK_TYPE_RAW        (0xc0)
 #define BLOCK_TYPE_COMPRESSED (0x0c)
@@ -257,7 +260,7 @@ static ZFASTINLINE int fastlz_compress_hdr(const void* input, uInt length,
       type = BLOCK_TYPE_RAW;
     }
     /* write back header */
-    done += fastlz_write_header(&output_start[0], type, done, length);
+    done += fastlz_write_header(output_start, type, done, length);
   }
   /* write an EOF marker (empty block with compressed=uncompressed=0) */
   if (flush == Z_FINISH) {
@@ -311,17 +314,15 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
     if (ZFAST_IS_DECOMPRESSING(s)) {
       /* if header read in progress or will be in multiple passes (sheesh) */
       if (s->state->inHdrOffs != 0 || s->avail_in < HEADER_SIZE) {
-        uInt i;
         /* we are to go buffered for the header - check if this is allowed */
         if (s->state->inHdrOffs == 0 && !may_buffer) {
           s->msg = "Need more data on input";
           return Z_BUF_ERROR;
         }
         /* copy up to HEADER_SIZE bytes */
-        for(i = s->state->inHdrOffs ; s->avail_in > 0 && i < HEADER_SIZE
-              ; i++) {
-          s->state->inHdr[i] = *s->next_in;
-          inSeek(s, 1);
+        for( ; s->avail_in > 0 && s->state->inHdrOffs < HEADER_SIZE
+               ; s->state->inHdrOffs++, inSeek(s, 1)) {
+          s->state->inHdr[s->state->inHdrOffs] = *s->next_in;
         }
       }
       /* process header if completed */
@@ -395,18 +396,22 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
     }
     
     /* sanity check */
-    if (s->state->block_type != BLOCK_TYPE_RAW
-        && s->state->block_type != BLOCK_TYPE_COMPRESSED) {
+    if (s->state->block_type == BLOCK_TYPE_BAD_MAGIC) {
+      s->msg = "Corrupted compressed stream (bad magic)";
+      return Z_DATA_ERROR;
+    }
+    else if (s->state->block_type != BLOCK_TYPE_RAW
+             && s->state->block_type != BLOCK_TYPE_COMPRESSED) {
       s->msg = "Corrupted compressed stream (illegal block type)";
-      return Z_STREAM_ERROR;
+      return Z_VERSION_ERROR;
     }
     else if (s->state->dec_size > BUFFER_BLOCK_SIZE) {
       s->msg = "Corrupted compressed stream (illegal decompressed size)";
-      return Z_STREAM_ERROR;
+      return Z_VERSION_ERROR;
     }
     else if (s->state->str_size > BUFFER_BLOCK_SIZE) {
       s->msg = "Corrupted compressed stream (illegal stream size)";
-      return Z_STREAM_ERROR;
+      return Z_VERSION_ERROR;
     }
     
     /* output not buffered yet */
@@ -462,7 +467,13 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
   if (in != NULL) {
     Bytef *out = NULL;
     const uInt in_size = s->state->str_size;
-    
+
+    /* we are supposed to finish, but we did not eat all data: ignore for now */
+    int flush_now = flush;
+    if (flush_now == Z_FINISH && s->avail_in != 0) {
+      flush_now = Z_NO_FLUSH;
+    }
+      
     /* decompressing */
     if (ZFAST_IS_DECOMPRESSING(s)) {
       int done;
@@ -494,14 +505,15 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
     /* compressing */
     else {
       /* note: if < MIN_BLOCK_SIZE, fastlz_compress_hdr will not compress */
-      const uInt estimated_dec_size = in_size + in_size / 10;
+      const uInt estimated_dec_size = in_size + in_size / EXPANSION_RATIO
+        + EXPANSION_SECURITY;
 
       /* can compress directly on client memory */
       if (s->avail_out >= estimated_dec_size) {
         const int done = fastlz_compress_hdr(in, in_size,
                                              s->next_out, estimated_dec_size,
                                              zlibLevelToFastlz(s->state->level),
-                                             flush);
+                                             flush_now);
         /* seek output */
         outSeek(s, done);
         /* no buffer */
@@ -513,7 +525,7 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
                                              s->state->outBuff,
                                              BUFFER_BLOCK_SIZE,
                                              zlibLevelToFastlz(s->state->level),
-                                             flush);
+                                             flush_now);
         /* produced size (in outBuff) */
         s->state->dec_size = (uInt) done;
         /* bufferred */
