@@ -107,7 +107,7 @@ ZFASTEXTERN int zfastlibCompress(zfast_stream *s, int flush);
  * before getting this code, to ensure that Z_BUF_ERROR implies a need to read
  * additional input data)
  **/
-ZFASTEXTERN int zfastlibDecompress2(zfast_stream *const s,
+ZFASTEXTERN int zfastlibDecompress2(zfast_stream *s,
                                     const int may_buffer);
 
 /**
@@ -121,7 +121,7 @@ ZFASTEXTERN int zfastlibDecompress2(zfast_stream *const s,
  * before getting this code, to ensure that Z_BUF_ERROR implies a need to read
  * additional input data)
  **/
-ZFASTEXTERN int zfastlibCompress2(zfast_stream *const s, int flush,
+ZFASTEXTERN int zfastlibCompress2(zfast_stream *s, int flush,
                                   const int may_buffer);
 
 /* exported internal fats lz lib */

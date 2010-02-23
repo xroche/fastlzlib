@@ -503,7 +503,7 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
   return Z_OK;
 }
 
-int zfastlibDecompress2(zfast_stream *const s, const int may_buffer) {
+int zfastlibDecompress2(zfast_stream *s, const int may_buffer) {
   if (!ZFAST_IS_COMPRESSING(s)) {
     return zfastlibProcess(s, Z_NO_FLUSH, may_buffer);
   } else {
