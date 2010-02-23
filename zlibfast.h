@@ -7,55 +7,16 @@
 #ifdef FASTLZ_INCLUDE_CONF_H
 #include "conf.h"
 #endif
-
-/* we are using only zlib types and defines */
-#include <zlib.h>
-
-/* zfast structure */
-typedef struct zfast_stream_s {
-  Bytef    *next_in;  /* next input byte */
-  uInt     avail_in;  /* number of bytes available at next_in */
-  uLong    total_in;  /* total nb of input bytes read so far */
-
-  Bytef    *next_out; /* next output byte should be put there */
-  uInt     avail_out; /* remaining free space at next_out */
-  uLong    total_out; /* total nb of bytes output so far */
-
-  char     *msg;      /* last error message, NULL if no error */
-
-  alloc_func zalloc;  /* used to allocate the internal state */
-  free_func  zfree;   /* used to free the internal state */
-  voidpf     opaque;  /* private data object passed to zalloc and zfree */
-
-  /* private fields */
-  
-  int level;          /* compression level or 0 for decompressing */
-
-  Bytef inHdr[8];
-  uInt inHdrOffs;
-
-  uInt block_type;
-  uInt str_size;
-  uInt dec_size;
-  
-  Bytef *inBuff;
-  Bytef *outBuff;
-  uInt inBuffOffs;
-  uInt outBuffOffs;
-} zfast_stream_s;
-
-#define ZFAST_LEVEL_BEST_SPEED             1
-#define ZFAST_LEVEL_BEST_COMPRESSION       2
-#define ZFAST_LEVEL_DEFAULT_COMPRESSION   -1
-
-#define ZFAST_FLUSH_NONE     0
-#define ZFAST_FLUSH_SYNC     1
-#define ZFAST_FLUSH_FULL     1
-#define ZFAST_FLUSH_FINISH   2
-
 #ifndef ZFASTEXTERN
 #define ZFASTEXTERN extern
 #endif
+
+/* we are using only zlib types and defines, including z_stream_s */
+#define NO_DUMMY_DECL
+#include <zlib.h>
+
+/* zfast structure */
+typedef z_stream zfast_stream;
 
 /**
  * Return the block size, that is, a size hint which can be used as a lower
@@ -74,54 +35,66 @@ ZFASTEXTERN const char * zfastlibVersion(void);
  * Returns Z_OK upon success, Z_MEM_ERROR upon memory allocation error.
  * (zlib equivalent: deflateInit)
  **/
-ZFASTEXTERN int zfastlibCompressInit(zfast_stream_s *s, int level);
+ZFASTEXTERN int zfastlibCompressInit(zfast_stream *s, int level);
 
 /**
  * Initialize a decompressing stream.
  * Returns Z_OK upon success, Z_MEM_ERROR upon memory allocation error.
  * (zlib equivalent: inflateInit)
  **/
-ZFASTEXTERN int zfastlibDecompressInit(zfast_stream_s *s);
+ZFASTEXTERN int zfastlibDecompressInit(zfast_stream *s);
 
 /**
  * Free allocated data.
  * Returns Z_OK upon success.
  * (zlib equivalent: deflateEnd)
  **/
-ZFASTEXTERN int zfastlibCompressEnd(zfast_stream_s *s);
+ZFASTEXTERN int zfastlibCompressEnd(zfast_stream *s);
 
 /**
  * Free allocated data.
  * Returns Z_OK upon success.
  * (zlib equivalent: inflateEnd)
  **/
-ZFASTEXTERN int zfastlibDecompressEnd(zfast_stream_s *s);
+ZFASTEXTERN int zfastlibDecompressEnd(zfast_stream *s);
 
 /**
  * Reset.
  * Returns Z_OK upon success.
  * (zlib equivalent: deflateReset)
  **/
-ZFASTEXTERN int zfastlibCompressReset(zfast_stream_s *s);
+ZFASTEXTERN int zfastlibCompressReset(zfast_stream *s);
 
 /**
  * Reset.
  * Returns Z_OK upon success.
  * (zlib equivalent: inflateReset)
  **/
-ZFASTEXTERN int zfastlibDecompressReset(zfast_stream_s *s);
+ZFASTEXTERN int zfastlibDecompressReset(zfast_stream *s);
+
+/**
+ * Return the internal memory buffers size.
+ * Returns -1 upon error.
+ **/
+ZFASTEXTERN int zfastlibCompressMemory(zfast_stream *s);
+
+/**
+ * Return the internal memory buffers size.
+ * Returns -1 upon error.
+ **/
+ZFASTEXTERN int zfastlibDecompressMemory(zfast_stream *s);
 
 /**
  * Decompress.
  * (zlib equivalent: inflate)
  **/
-ZFASTEXTERN int zfastlibDecompress(zfast_stream_s *s);
+ZFASTEXTERN int zfastlibDecompress(zfast_stream *s);
 
 /**
  * Compress.
  * (zlib equivalent: deflate)
  **/
-ZFASTEXTERN int zfastlibCcompress(zfast_stream_s *s, int flush);
+ZFASTEXTERN int zfastlibCompress(zfast_stream *s, int flush);
 
 /**
  * Decompress.
@@ -134,7 +107,7 @@ ZFASTEXTERN int zfastlibCcompress(zfast_stream_s *s, int flush);
  * before getting this code, to ensure that Z_BUF_ERROR implies a need to read
  * additional input data)
  **/
-ZFASTEXTERN int zfastlibDecompress2(zfast_stream_s *const s,
+ZFASTEXTERN int zfastlibDecompress2(zfast_stream *const s,
                                     const int may_buffer);
 
 /**
@@ -148,7 +121,7 @@ ZFASTEXTERN int zfastlibDecompress2(zfast_stream_s *const s,
  * before getting this code, to ensure that Z_BUF_ERROR implies a need to read
  * additional input data)
  **/
-ZFASTEXTERN int zfastlibCompress2(zfast_stream_s *const s, int flush,
+ZFASTEXTERN int zfastlibCompress2(zfast_stream *const s, int flush,
                                   const int may_buffer);
 
 /* exported internal fats lz lib */
