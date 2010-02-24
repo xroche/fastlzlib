@@ -42,7 +42,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "zlibfast.h"
+#include "fastlzlib.h"
 #include "fastlz.c"
 
 /* note: the 5% ratio (/20) is not sufficient - add 66 bytes too */

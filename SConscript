@@ -7,7 +7,7 @@ Import('*')
 e = env.Clone()
 e.Remove(CCFLAGS = [ '-ansi' ])
 e.BuildSharedLibrary(name='fastlzlib',
-                     sources='zlibfast.c',
+                     sources='fastlzlib.c',
                      depend='',
                      defines=['FASTLZ_INCLUDE_CONF_H'],
                      description='FastLZ - lightning-fast lossless compression library'
