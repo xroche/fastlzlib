@@ -15,20 +15,37 @@
 #define NO_DUMMY_DECL
 #include <zlib.h>
 
-/* zfast structure */
-typedef z_stream zfast_stream;
-
 /**
- * Return the block size, that is, a size hint which can be used as a lower
- * bound for output buffer allocation and input buffer reads.
+ * The zfast structure is identical to zlib one, except for the "state" opaque
+ * member
  **/
-ZFASTEXTERN uInt zfastlibGetBlockSize(void);
+typedef z_stream zfast_stream;
 
 /**
  * Return the fastlz library version.
  * (zlib equivalent: zlibVersion)
  **/
 ZFASTEXTERN const char * zfastlibVersion(void);
+
+/**
+ * Return the header size, that is, the fixed size of data at the begining of
+ * a stream which contains details on the compression type..
+ **/
+ZFASTEXTERN int zfastlibGetHeaderSize(void);
+
+/**
+ * Return the block size, that is, a size hint which can be used as a lower
+ * bound for output buffer allocation and input buffer reads.
+ **/
+ZFASTEXTERN int zfastlibGetBlockSize(zfast_stream *s);
+
+/**
+ * Return the block size is a compressed stream begining with "input".
+ * Returns 0 if the stream is invalid or too short.
+ * You may use zfastlibGetHeaderSize() to know how many bytes needs to be
+ * read for identifying a stream.
+ **/
+ZFASTEXTERN int zfastlibGetStreamBlockSize(const void* input, int length);
 
 /**
  * Initialize a compressing stream.
@@ -38,11 +55,25 @@ ZFASTEXTERN const char * zfastlibVersion(void);
 ZFASTEXTERN int zfastlibCompressInit(zfast_stream *s, int level);
 
 /**
+ * Initialize a compressing stream, and set the block size to "block_size".
+ * Returns Z_OK upon success, Z_MEM_ERROR upon memory allocation error.
+ **/
+ZFASTEXTERN int zfastlibCompressInit2(zfast_stream *s, int level,
+                                      int block_size);
+
+/**
  * Initialize a decompressing stream.
  * Returns Z_OK upon success, Z_MEM_ERROR upon memory allocation error.
  * (zlib equivalent: inflateInit)
  **/
 ZFASTEXTERN int zfastlibDecompressInit(zfast_stream *s);
+
+/**
+ * Initialize a decompressing stream, and set the block size to "block_size".
+ * Returns Z_OK upon success, Z_MEM_ERROR upon memory allocation error.
+ * (zlib equivalent: inflateInit)
+ **/
+ZFASTEXTERN int zfastlibDecompressInit2(zfast_stream *s, int block_size);
 
 /**
  * Free allocated data.
@@ -123,6 +154,16 @@ ZFASTEXTERN int zfastlibDecompress2(zfast_stream *s,
  **/
 ZFASTEXTERN int zfastlibCompress2(zfast_stream *s, int flush,
                                   const int may_buffer);
+
+/**
+ * Skip invalid data until a valid marker is found in the stream. All skipped
+ * data will be lost, and associated uncompressed data too.
+ * Call this function after zfastlibDecompress() returned Z_DATA_ERROR to
+ * locate the next valid compressed block.
+ * Returns Z_OK upon success.
+ * (zlib equivalent: inflateSync)
+ **/
+ZFASTEXTERN int zfastlibDecompressSync(zfast_stream *s);
 
 /* exported internal fats lz lib */
 
