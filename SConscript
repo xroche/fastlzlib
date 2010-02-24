@@ -6,7 +6,7 @@ Import('*')
 # build
 e = env.Clone()
 e.Remove(CCFLAGS = [ '-ansi' ])
-e.BuildSharedLibrary(name='ngfastlz',
+e.BuildSharedLibrary(name='fastlzlib',
                      sources='zlibfast.c',
                      depend='',
                      defines=['FASTLZ_INCLUDE_CONF_H'],

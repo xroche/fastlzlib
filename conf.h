@@ -1,5 +1,5 @@
 /* must be the last included file */
-#include "text/flow/fastlz/ngfastlz.module.h"
+#include "text/flow/fastlz/fastlzlib.module.h"
 
 /* exports and inlining */
 #define _NG_NO_ASSERT
