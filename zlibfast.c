@@ -641,6 +641,15 @@ int zfastlibCompress(zfast_stream *s, int flush) {
   return zfastlibCompress2(s, flush, 1);
 }
 
+int zfastlibIsCompressedStream(const void* input, int length) {
+  if (length >= HEADER_SIZE) {
+    const Bytef*const in = (const Bytef*) input;
+    return zfastlibGetStreamBlockSize(in, length) != 0 ? Z_OK : Z_DATA_ERROR;
+  } else {
+    return Z_BUF_ERROR;
+  }
+}
+
 int zfastlibDecompressSync(zfast_stream *s) {
   if (ZFAST_IS_DECOMPRESSING(s)) {
     if (s->state->outBuffOffs < s->state->dec_size) {

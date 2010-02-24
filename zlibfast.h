@@ -48,6 +48,14 @@ ZFASTEXTERN int zfastlibGetBlockSize(zfast_stream *s);
 ZFASTEXTERN int zfastlibGetStreamBlockSize(const void* input, int length);
 
 /**
+ * Check if the given data is a fastlz compressed stream.
+ * Returns Z_OK is the stream is a fastlz compressed stream, Z_BUF_ERROR is the
+ * input data size is too small, and Z_DATA_ERROR is the stream is not a
+ * fastlz stream.
+ **/
+ZFASTEXTERN int zfastlibIsCompressedStream(const void* input, int length);
+
+/**
  * Initialize a compressing stream.
  * Returns Z_OK upon success, Z_MEM_ERROR upon memory allocation error.
  * (zlib equivalent: deflateInit)
@@ -165,10 +173,21 @@ ZFASTEXTERN int zfastlibCompress2(zfast_stream *s, int flush,
  **/
 ZFASTEXTERN int zfastlibDecompressSync(zfast_stream *s);
 
-/* exported internal fats lz lib */
+/* exported internal fast lz lib functions */
 
+/**
+ * Compress.
+ **/
 ZFASTEXTERN int fastlz_compress(const void* input, int length, void* output);
+
+/**
+ * Decompress.
+ **/
 ZFASTEXTERN int fastlz_decompress(const void* input, int length, void* output,
                                   int maxout);
+
+/**
+ * Decompress with level.
+ **/
 ZFASTEXTERN int fastlz_compress_level(int level, const void* input, int length,
                                       void* output);
