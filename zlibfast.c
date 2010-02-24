@@ -9,12 +9,12 @@
 #include "fastlz.c"
 
 #define MIN_BLOCK_SIZE      64
-/* note: the 5% ratio (/20) is not always true */
+/* note: the 5% ratio (/20) is not sufficient - add 66 bytes too */
 #define EXPANSION_RATIO     10
 #define EXPANSION_SECURITY  66
 #define HEADER_SIZE         16
 #define MAX_BLOCK_SIZE 32768
-#define BUFFER_BLOCK_SIZE \
+#define BUFFER_BLOCK_SIZE                                               \
   ( MAX_BLOCK_SIZE + MAX_BLOCK_SIZE / EXPANSION_RATIO + HEADER_SIZE*2)
 
 #define BLOCK_TYPE_RAW        (0xc0)
