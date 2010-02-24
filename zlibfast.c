@@ -1,3 +1,30 @@
+/*
+  zlib-like interface to FastLZ, the lightning-fast lossless compression library
+  Copyright (C) 2010 Exalead SA. (http://www.exalead.com/)
+  
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
+
+  Remarks/Bugs:
+  FastLZ compression library by Ariya Hidayat (ariya@kde.org)
+  Library encapsulation by Xavier Roche <fastlz@exalead.com>
+*/
+
 /* ZLIB-like interface to fast LZ */
 
 #include <stdio.h>
@@ -34,6 +61,10 @@
 /* macros */
 #define ZFAST_IS_COMPRESSING(S) ( (S)->state->level != ZFAST_LEVEL_DECOMPRESS )
 #define ZFAST_IS_DECOMPRESSING(S) ( !ZFAST_IS_COMPRESSING(S) )
+#define ZFAST_INPUT_IS_EMPTY(S) ( (S)->avail_in == 0 )
+#define ZFAST_OUTPUT_IS_FULL(S) ( (S)->avail_out == 0 )
+#define ZFAST_HAS_BUFFERED_OUTPUT(S)                    \
+  ( s->state->outBuffOffs < s->state->dec_size )
 
 /* inlining */
 #ifndef ZFASTINLINE
@@ -344,17 +375,17 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
   const Bytef *in = NULL;
 
   /* sanity check for next_in/next_out */
-  if (s->avail_in != 0 && s->next_in == NULL) {
+  if (s->next_in == NULL && !ZFAST_INPUT_IS_EMPTY(s)) {
     s->msg = "Invalid input";
     return Z_STREAM_ERROR;
   }
-  else if (s->avail_out != 0 && s->next_out == NULL) {
+  else if (s->next_out == NULL && !ZFAST_OUTPUT_IS_FULL(s)) {
     s->msg = "Invalid output";
     return Z_STREAM_ERROR;
   }
   
   /* output buffer data to be processed */
-  if (s->state->outBuffOffs < s->state->dec_size) {
+  if (ZFAST_HAS_BUFFERED_OUTPUT(s)) {
     /* maximum size that can be copied */
     uInt size = s->state->dec_size - s->state->outBuffOffs;
     if (size > s->avail_out) {
@@ -435,7 +466,7 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
         s->state->dec_size = dec_size;
         s->state->inHdrOffs = 0;
       }
-      /* otherwise, please comd back later (header not fully processed) */
+      /* otherwise, please come back later (header not fully processed) */
       else {
         assert(may_buffer);  /* impossible at this point */
         return Z_OK;
@@ -462,6 +493,9 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
       s->state->dec_size =  0;  /* yet unknown */
     }
     
+    /* output not buffered yet */
+    s->state->outBuffOffs = s->state->dec_size;
+
     /* sanity check */
     if (s->state->block_type == BLOCK_TYPE_BAD_MAGIC) {
       s->msg = "Corrupted compressed stream (bad magic)";
@@ -485,9 +519,6 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
       return Z_VERSION_ERROR;
     }
    
-    /* output not buffered yet */
-    s->state->outBuffOffs = s->state->dec_size;
-
     /* compressed and uncompressed == 0 : EOF marker */
     if (s->state->str_size == 0 && s->state->dec_size == 0) {
       return Z_STREAM_END;
@@ -541,10 +572,10 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
 
     /* we are supposed to finish, but we did not eat all data: ignore for now */
     int flush_now = flush;
-    if (flush_now == Z_FINISH && s->avail_in != 0) {
+    if (flush_now == Z_FINISH && !ZFAST_INPUT_IS_EMPTY(s)) {
       flush_now = Z_NO_FLUSH;
     }
-      
+
     /* decompressing */
     if (ZFAST_IS_DECOMPRESSING(s)) {
       int done;
@@ -567,7 +598,22 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
       s->state->str_size = 0;
 
       /* rock'in */
-      done = fastlz_decompress(in, in_size, out, out_size);
+      switch(s->state->block_type) {
+      case BLOCK_TYPE_COMPRESSED:
+        done = fastlz_decompress(in, in_size, out, out_size);
+        break;
+      case BLOCK_TYPE_RAW:
+        if (out_size >= in_size) {
+          memcpy(out, in, in_size);
+          done = in_size;
+        } else {
+          done = 0;
+        }
+        break;
+      default:
+        assert(0);
+        break;
+      }
       if (done != (int) s->state->dec_size) {
         s->msg = "Unable to decompress block stream";
         return Z_STREAM_ERROR;
@@ -611,8 +657,17 @@ static ZFASTINLINE int zfastlibProcess(zfast_stream *const s, const int flush,
   }
 
   /* so far so good */
-  
-  return Z_OK;
+
+  /* success and EOF */
+  if (flush == Z_FINISH
+      && ZFAST_INPUT_IS_EMPTY(s)
+      && !ZFAST_HAS_BUFFERED_OUTPUT(s)) {
+    return Z_STREAM_END;
+  }
+  /* success */
+  else {
+    return Z_OK;
+  }
 }
 
 int zfastlibDecompress2(zfast_stream *s, const int may_buffer) {
@@ -652,7 +707,7 @@ int zfastlibIsCompressedStream(const void* input, int length) {
 
 int zfastlibDecompressSync(zfast_stream *s) {
   if (ZFAST_IS_DECOMPRESSING(s)) {
-    if (s->state->outBuffOffs < s->state->dec_size) {
+    if (ZFAST_HAS_BUFFERED_OUTPUT(s)) {
       /* not in an error state: uncompressed data available in buffer */
       return Z_OK;
     }
