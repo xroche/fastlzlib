@@ -225,7 +225,7 @@ int zfastlibCompressInit(zfast_stream *s, int level) {
 }
 
 int zfastlibDecompressInit2(zfast_stream *s, int block_size) {
-  const int success = zfastlibInit(s, DEFAULT_BLOCK_SIZE);
+  const int success = zfastlibInit(s, block_size);
   if (success == Z_OK) {
     s->state->level = ZFAST_LEVEL_DECOMPRESS;
   }
