@@ -118,7 +118,7 @@ static const char* BLOCK_MAGIC = "FastLZ";
 struct internal_state {
   char magic[8];
   
-  int level;          /* compression level or 0 for decompressing */
+  int level;               /* compression level */
 
   Bytef inHdr[HEADER_SIZE];
   uInt inHdrOffs;
@@ -198,6 +198,7 @@ static void fastlzlibFree(zfast_stream *s) {
   }
 }
 
+/* reset internal state */
 static void fastlzlibReset(zfast_stream *s) {
   assert(strcmp(s->state->magic, MAGIC) == 0);
   s->msg = NULL;
@@ -310,6 +311,7 @@ static ZFASTINLINE int zlibLevelToFastlz(int level) {
   return level <= Z_BEST_SPEED ? 1 : 2;
 }
 
+/* write an header to "dest" */
 static ZFASTINLINE int fastlz_write_header(Bytef* dest,
                                            uInt type,
                                            uInt block_size,
@@ -323,6 +325,7 @@ static ZFASTINLINE int fastlz_write_header(Bytef* dest,
   return HEADER_SIZE;
 }
 
+/* read an header from "source" */
 static ZFASTINLINE void fastlz_read_header(const Bytef* source,
                                            uInt *type,
                                            uInt *block_size,
@@ -375,6 +378,7 @@ int fastlzlibGetStreamInfo(const void* input, int length,
   }
 }
 
+/* helper for fastlz_compress */
 static ZFASTINLINE int fastlz_compress_hdr(const void* input, uInt length,
                                            void* output, uInt output_length,
                                            int block_size, int level,
@@ -608,7 +612,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
       in = s->state->inBuff;
     }
     /* forced flush: adjust str_size */
-    else if (flush != Z_NO_FLUSH) {
+    else if (ZFAST_IS_COMPRESSING(s) && flush != Z_NO_FLUSH) {
       in = s->state->inBuff;
       s->state->str_size = s->state->inBuffOffs;
     }
