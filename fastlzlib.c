@@ -49,7 +49,7 @@
 /* note: the 5% ratio (/20) is not sufficient - add 66 bytes too */
 #define EXPANSION_RATIO         10
 #define EXPANSION_SECURITY      66
-#define HEADER_SIZE             20
+#define HEADER_SIZE             16
 
 #define MIN_BLOCK_SIZE          64
 #define DEFAULT_BLOCK_SIZE   32768
@@ -57,13 +57,17 @@
 /* size of blocks to be compressed */
 #define BLOCK_SIZE(S) ( (S)->state->block_size )
 
+/* block size, given the power base (0..15 => 1K..32M) */
+#define POWER_BASE 10
+#define POWER_TO_BLOCK_SIZE(P) ( 1 << ( P + POWER_BASE ) )
+
 /* estimated upper boundary of compressed size */
 #define BUFFER_BLOCK_SIZE(S)                                            \
   ( BLOCK_SIZE(S) + BLOCK_SIZE(S) / EXPANSION_RATIO + HEADER_SIZE*2)
 
-/* block types */
-#define BLOCK_TYPE_RAW         (0xc0)
-#define BLOCK_TYPE_COMPRESSED  (0x0c)
+/* block types (base ; the lower four bits are used for block size) */
+#define BLOCK_TYPE_RAW         (0x10)
+#define BLOCK_TYPE_COMPRESSED  (0xc0)
 #define BLOCK_TYPE_BAD_MAGIC   (0xffff)
 
 /* fake level for decompression */
@@ -142,7 +146,7 @@ const char * fastlzlibVersion() {
   return FASTLZ_VERSION_STRING;
 }
 
-/* get the preferred minimal block size */
+/* get the block size */
 int fastlzlibGetBlockSize(zfast_stream *s) {
   if (s != NULL && s->state != NULL) {
     assert(strcmp(s->state->magic, MAGIC) == 0);
@@ -210,8 +214,21 @@ static void fastlzlibReset(zfast_stream *s) {
   s->state->outBuffOffs = 0;
 }
 
+static ZFASTINLINE int fastlzlibGetBlockSizeLevel(int block_size) {
+  int i;
+  for(i = 0 ; block_size > 1 && ( ( block_size & 1 ) == 0 )
+        ; block_size >>= 1, i++);
+  if (block_size == 1 && i >= POWER_BASE && i < POWER_BASE + 0xf) {
+    return i - POWER_BASE;
+  }
+  return -1;
+}
+
 /* initialize private fields */
 static int fastlzlibInit(zfast_stream *s, int block_size) {
+  if (fastlzlibGetBlockSizeLevel(block_size) == -1) {
+    return Z_STREAM_ERROR;
+  }
   if (s != NULL) {
     s->state = (zfast_stream_internal*)
       zalloc(s, sizeof(zfast_stream_internal), 1);
@@ -317,11 +334,15 @@ static ZFASTINLINE int fastlz_write_header(Bytef* dest,
                                            uInt block_size,
                                            uInt compressed,
                                            uInt original) {
+  const int bs = fastlzlibGetBlockSizeLevel(block_size);
+  const int packed_type = type + bs;
+  assert(bs >= 0x0 && bs <= 0xf);
+  assert( ( type & 0x0f ) == 0);
+  
   memcpy(&dest[0], BLOCK_MAGIC, 7);
-  WRITE_8(&dest[7], type);
+  WRITE_8(&dest[7], packed_type);
   WRITE_32(&dest[8], compressed);
   WRITE_32(&dest[12], original);
-  WRITE_32(&dest[16], block_size);
   return HEADER_SIZE;
 }
 
@@ -332,10 +353,12 @@ static ZFASTINLINE void fastlz_read_header(const Bytef* source,
                                            uInt *compressed,
                                            uInt *original) {
   if (memcmp(&source[0], BLOCK_MAGIC, 7) == 0) {
-    *type = READ_8(&source[7]);
+    const int packed_type = READ_8(&source[7]);
+    const int block_pow = packed_type & 0x0f;
+    *type = packed_type & 0xf0;
     *compressed = READ_32(&source[8]);
     *original = READ_32(&source[12]);
-    *block_size = READ_32(&source[12]);
+    *block_size = POWER_TO_BLOCK_SIZE(block_pow);
   } else {
     *type = BLOCK_TYPE_BAD_MAGIC;
     *compressed =  0;
@@ -623,8 +646,8 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
     Bytef *out = NULL;
     const uInt in_size = s->state->str_size;
 
-    /* we are supposed to finish, but we did not eat all data: ignore for now */
     int flush_now = flush;
+    /* we are supposed to finish, but we did not eat all data: ignore for now */
     if (flush_now == Z_FINISH && !ZFAST_INPUT_IS_EMPTY(s)) {
       flush_now = Z_NO_FLUSH;
     }

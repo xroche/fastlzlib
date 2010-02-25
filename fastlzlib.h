@@ -67,6 +67,8 @@ ZFASTEXTERN int fastlzlibCompressInit(zfast_stream *s, int level);
 
 /**
  * Initialize a compressing stream, and set the block size to "block_size".
+ * The block size MUST be a power of two, and be within the
+ * [1024 .. 33554432] interval
  * Returns Z_OK upon success, Z_MEM_ERROR upon memory allocation error.
  **/
 ZFASTEXTERN int fastlzlibCompressInit2(zfast_stream *s, int level,
@@ -81,7 +83,10 @@ ZFASTEXTERN int fastlzlibDecompressInit(zfast_stream *s);
 
 /**
  * Initialize a decompressing stream, and set the block size to "block_size".
- * Returns Z_OK upon success, Z_MEM_ERROR upon memory allocation error.
+ * The block size MUST be a power of two, and be within the
+ * [1024 .. 33554432] interval
+ * Returns Z_OK upon success, Z_MEM_ERROR upon memory allocation error, and
+ * Z_DATA_ERROR if the block size is invalid.
  * (zlib equivalent: inflateInit)
  **/
 ZFASTEXTERN int fastlzlibDecompressInit2(zfast_stream *s, int block_size);
@@ -131,9 +136,9 @@ ZFASTEXTERN int fastlzlibCompress(zfast_stream *s, int flush);
  * @arg may_buffer if non zero, accept to process partially a stream by using
  * internal buffers. if zero, input data shortage or output buffer room shortage
  * will return Z_BUF_ERROR. in this case, the client should ensure that the
- * input data provided and the output buffer are larger than BUFFER_BLOCK_SIZE
- * before calling again the function. (the output buffer should be validated
- * before getting this code, to ensure that Z_BUF_ERROR implies a need to read
+ * input data provided and the output buffer are large enough before calling
+ * again the function. (the output buffer should be validated before getting
+ * this code, to ensure that Z_BUF_ERROR implies a need to read
  * additional input data)
  * @arg flush if set to Z_SYNC_FLUSH, process until the next block is reached,
  * and, if reached, return Z_NEED_DICT (a code currently unused outside this
@@ -151,10 +156,10 @@ ZFASTEXTERN int fastlzlibDecompress2(zfast_stream *s, int flush,
  * @arg may_buffer if non zero, accept to process partially a stream by using
  * internal buffers. if zero, input data shortage or output buffer room shortage
  * will return Z_BUF_ERROR. in this case, the client should ensure that the
- * input data provided and the output buffer are larger than BUFFER_BLOCK_SIZE
- * before calling again the function. (the output buffer should be validated
- * before getting this code, to ensure that Z_BUF_ERROR implies a need to read
- * additional input data)
+ * input data provided and the output buffer are large enough before calling
+ * again the function. (the output buffer should be validated before getting
+ * this code, to ensure that Z_BUF_ERROR implies a need to read additional
+ * input data)
  **/
 ZFASTEXTERN int fastlzlibCompress2(zfast_stream *s, int flush,
                                    const int may_buffer);

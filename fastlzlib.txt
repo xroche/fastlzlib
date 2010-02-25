@@ -19,16 +19,19 @@ compressed block (which is an EOF marker).
 
 Each compressed block has an header at the begining, little endian, 
 
-#define BLOCK_TYPE_RAW         (0xc0)
-#define BLOCK_TYPE_COMPRESSED  (0x0c)
+#define BLOCK_TYPE_RAW         0x1
+#define BLOCK_TYPE_COMPRESSED  0xc
 
 struct fastlzlib_header {
   Bytef magic[7];          /* "FastLZ\0" */
-  Bytef type;              /* see BLOCK_TYPE_* */
+  Bytef packed_type;       /* type + block size power offset */
   uInt compressed_size;    /* compressed size */
   uInt uncompressed_size;  /* uncompressed size */
-  uInt block_size;         /* maximum uncompressed size ("block size") */
 } fastlzlib_header;
+
+The packed_type member is a 8-bit value, the left four bits is the block type
+(see BLOCK_TYPE* values), and the right gour bits is the block size power
+offset, that is, ( log2(block_size) - 10 )
 
 The EOF marker is identified by compressed_size == 0 and uncompressed_size == 0.
 The block_size member is constant for a given stream, and is only informational.
