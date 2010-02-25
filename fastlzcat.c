@@ -231,9 +231,11 @@ int main(int argc, char **argv) {
                                         &uncompressed_size) != Z_OK) {
                 error("stream read error");
               }
-              fprintf(stdout, "block at %u ([%u .. %u[):"
+              fprintf(stdout, "%s block at %u ([%u .. %u[):"
                       "\tcompressed=%u\tuncompressed=%u"
                       "\t[block_size=%u]\n",
+                      compressed_size != uncompressed_size 
+                      ? "compressed" : "uncompressed",
                       (int) total_in,
                       (int) total_out,
                       (int) ( total_out + uncompressed_size ),

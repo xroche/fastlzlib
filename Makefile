@@ -33,7 +33,7 @@ gcc:
 		-lfastlz -L. \
 		fastlzcat.o -o fastlzcat
 
-
+# to be started in a visual studio command prompt
 visualcpp:
 	cl.exe -nologo -MD -LD -O2 -W3 \
 		-D_WINDOWS -D_WIN32_WINNT=0x0400 -DWINVER=0x0400 \

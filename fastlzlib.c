@@ -418,8 +418,18 @@ static ZFASTINLINE int fastlz_compress_hdr(const void* input, uInt length,
     if (length > MIN_BLOCK_SIZE) {
       done = fastlz_compress_level(level, input, length, output_data_start);
       assert(done + HEADER_SIZE*2 <= output_length);
-      type = BLOCK_TYPE_COMPRESSED;
-    } else {
+      if (done < length) {
+        type = BLOCK_TYPE_COMPRESSED;
+      }
+      /* compressed version is greater ; use raw data */
+      else {
+        memcpy(output_data_start, input, length);
+        done = length;
+        type = BLOCK_TYPE_RAW;
+      }
+    }
+    /* store small chunk as raw data */
+    else {
       assert(length + HEADER_SIZE*2 <= output_length);
       memcpy(output_data_start, input, length);
       done = length;

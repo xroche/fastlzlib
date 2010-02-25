@@ -23,20 +23,20 @@ Each compressed block has an header at the begining, little endian,
 #define BLOCK_TYPE_COMPRESSED  0xc
 
 struct fastlzlib_header {
-  Bytef magic[7];          /* "FastLZ\0" */
-  Bytef packed_type;       /* type + block size power offset */
-  uInt compressed_size;    /* compressed size */
-  uInt uncompressed_size;  /* uncompressed size */
+  Bytef magic[7];          /* "FastLZ\0" (7 bytes) */
+  Bytef packed_type;       /* type + block size power offset (8-bit) */
+  uInt compressed_size;    /* compressed size (32-bit) */
+  uInt uncompressed_size;  /* uncompressed size (32-bit) */
 } fastlzlib_header;
 
 The packed_type member is a 8-bit value, the left four bits is the block type
-(see BLOCK_TYPE* values), and the right gour bits is the block size power
+(see BLOCK_TYPE* values), and the right four bits is the block size power
 offset, that is, ( log2(block_size) - 10 )
 
 The EOF marker is identified by compressed_size == 0 and uncompressed_size == 0.
 The block_size member is constant for a given stream, and is only informational.
 
-Immediately following the header, the compressed raw stream block.
+Immediately following the header, lies the compressed raw stream block.
 
 struct fastlzlib_stream {
   fastlzlib_header header;
@@ -44,18 +44,23 @@ struct fastlzlib_stream {
 } fastlzlib_stream;
 
 The complete block size is sizeof(fastlzlib_header) + compressed_size, and
-sizeof(fastlzlib_header) == 20.
+sizeof(fastlzlib_header) == 16.
 
 The header can be used to seek efficiently to a given uncompressed stream
 position, by reading headers and skipping compressed data without reading it
 until the desired block is reached.
+
+Note: the uncompressed size is 32-bit, but MUST be lower than the block size
+in use for the stream. A stream larger than the block size will be splitted
+in several blocks. There is no limit on the number of blocks a stream can
+embed.
 
 RAW compressed stream description
 ---------------------------------
 
 type == BLOCK_TYPE_RAW
 The raw stream is uncompressed ; this type is used for blocks too small to be
-compressed
+compressed (64 bytes or less)
 
 type == BLOCK_TYPE_COMPRESSED
 The raw stream is compressed using FastLZ. See FastLZ reference for more
