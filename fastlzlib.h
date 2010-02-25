@@ -106,6 +106,12 @@ ZFASTEXTERN int fastlzlibCompressEnd(zfast_stream *s);
 ZFASTEXTERN int fastlzlibDecompressEnd(zfast_stream *s);
 
 /**
+ * Free allocated data by a compressing or decompressing stream.
+ * Returns Z_OK upon success.
+ **/
+#define fastlzlibEnd fastlzlibCompressEnd
+
+/**
  * Reset.
  * Returns Z_OK upon success.
  * (zlib equivalent: deflateReset)
@@ -118,6 +124,12 @@ ZFASTEXTERN int fastlzlibCompressReset(zfast_stream *s);
  * (zlib equivalent: inflateReset)
  **/
 ZFASTEXTERN int fastlzlibDecompressReset(zfast_stream *s);
+
+/**
+ * Reset a compressing or decompressing stream.
+ * Returns Z_OK upon success.
+ **/
+#define fastlzlibReset fastlzlibCompressReset
 
 /**
  * Decompress.

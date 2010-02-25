@@ -12,6 +12,14 @@ e.BuildSharedLibrary(name='fastlzlib',
                      defines=['FASTLZ_INCLUDE_CONF_H'],
                      description='FastLZ - lightning-fast lossless compression library'
                      )
+
+# tool using fastlzlib
+BuildExecutable(name='fastlzcat',
+                sources='fastlzcat.c',
+                depend='fastlzlib',
+                description='FastLZ stream compression/decompression'
+            )
+
 # tools
 if False:
     e.BuildExecutable(name='6pack',

@@ -25,6 +25,8 @@
   Library encapsulation by Xavier Roche (fastlz@exalead.com)
 */
 
+/* zlib compatibility header file - wrap main zlib functions by fastlz ones */
+
 #ifndef FASTLZ_FASTLZLIB_ZLIB_H
 #define FASTLZ_FASTLZLIB_ZLIB_H
 

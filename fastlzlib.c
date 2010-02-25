@@ -45,6 +45,7 @@
 
 #include "fastlzlib.h"
 #include "fastlz.c"
+#undef fastlzlibReset
 
 /* note: the 5% ratio (/20) is not sufficient - add 66 bytes too */
 #define EXPANSION_RATIO         10
@@ -52,7 +53,7 @@
 #define HEADER_SIZE             16
 
 #define MIN_BLOCK_SIZE          64
-#define DEFAULT_BLOCK_SIZE   32768
+#define DEFAULT_BLOCK_SIZE  262144
 
 /* size of blocks to be compressed */
 #define BLOCK_SIZE(S) ( (S)->state->block_size )
@@ -226,10 +227,11 @@ static ZFASTINLINE int fastlzlibGetBlockSizeLevel(int block_size) {
 
 /* initialize private fields */
 static int fastlzlibInit(zfast_stream *s, int block_size) {
-  if (fastlzlibGetBlockSizeLevel(block_size) == -1) {
-    return Z_STREAM_ERROR;
-  }
   if (s != NULL) {
+    if (fastlzlibGetBlockSizeLevel(block_size) == -1) {
+      s->msg = "block size is invalid";
+      return Z_STREAM_ERROR;
+    }
     s->state = (zfast_stream_internal*)
       zalloc(s, sizeof(zfast_stream_internal), 1);
     strcpy(s->state->magic, MAGIC);
@@ -241,6 +243,7 @@ static int fastlzlibInit(zfast_stream *s, int block_size) {
       return Z_OK;
     }
     fastlzlibFree(s);
+    s->msg = "memory exhausted";
   } else {
     return Z_STREAM_ERROR;
   }
@@ -443,7 +446,14 @@ static ZFASTINLINE int fastlz_compress_hdr(const void* input, uInt length,
 static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
                                        const int may_buffer) {
   const Bytef *in = NULL;
+  const uInt prev_avail_in = s->avail_in;
+  const uInt prev_avail_out = s->avail_out;
 
+  /* returns Z_OK if something was processed, Z_BUF_ERROR otherwise */
+#define PROGRESS_OK() ( ( s->avail_in != prev_avail_in                \
+                          || s->avail_out != prev_avail_out )         \
+                        ? Z_OK : Z_BUF_ERROR )
+  
   /* sanity check for next_in/next_out */
   if (s->next_in == NULL && !ZFAST_INPUT_IS_EMPTY(s)) {
     s->msg = "Invalid input";
@@ -468,7 +478,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
       outSeek(s, size);
     }
     /* and return chunk */
-    return Z_OK;
+    return PROGRESS_OK();
   }
 
   /* read next block (note: output buffer is empty here) */
@@ -488,7 +498,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
       if (s->state->inHdrOffs != 0 || s->avail_in < HEADER_SIZE) {
         /* we are to go buffered for the header - check if this is allowed */
         if (s->state->inHdrOffs == 0 && !may_buffer) {
-          s->msg = "Need more data on input";
+          s->msg = "need more data on input";
           return Z_BUF_ERROR;
         }
         /* copy up to HEADER_SIZE bytes */
@@ -512,12 +522,12 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
         if (!may_buffer) {
           /* input buffer too small */
           if (s->avail_in < str_size) {
-            s->msg = "Need more data on input";
+            s->msg = "need more data on input";
             return Z_BUF_ERROR;
           }
           /* output buffer too small */
           else if (s->avail_out < dec_size) {
-            s->msg = "Need more room on output";
+            s->msg = "need more room on output";
             return Z_BUF_ERROR;
           }
         }
@@ -545,7 +555,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
       /* otherwise, please come back later (header not fully processed) */
       else {
         assert(may_buffer);  /* impossible at this point */
-        return Z_OK;
+        return PROGRESS_OK();
       }
     }
     /* decompressing: fixed input size (unless flush) */
@@ -558,7 +568,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
         if (flush > Z_NO_FLUSH) {
           str_size = s->avail_in;
         } else if (!may_buffer) {
-          s->msg = "Need more data on input";
+          s->msg = "need more data on input";
           return Z_BUF_ERROR;
         }
       }
@@ -574,24 +584,24 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
 
     /* sanity check */
     if (s->state->block_type == BLOCK_TYPE_BAD_MAGIC) {
-      s->msg = "Corrupted compressed stream (bad magic)";
+      s->msg = "corrupted compressed stream (bad magic)";
       return Z_DATA_ERROR;
     }
     else if (s->state->block_type != BLOCK_TYPE_RAW
              && s->state->block_type != BLOCK_TYPE_COMPRESSED) {
-      s->msg = "Corrupted compressed stream (illegal block type)";
+      s->msg = "corrupted compressed stream (illegal block type)";
       return Z_VERSION_ERROR;
     }
     else if (block_size > BLOCK_SIZE(s)) {
-      s->msg = "Block size too large";
+      s->msg = "block size too large";
       return Z_VERSION_ERROR;
     }
     else if (s->state->dec_size > BUFFER_BLOCK_SIZE(s)) {
-      s->msg = "Corrupted compressed stream (illegal decompressed size)";
+      s->msg = "corrupted compressed stream (illegal decompressed size)";
       return Z_VERSION_ERROR;
     }
     else if (s->state->str_size > BUFFER_BLOCK_SIZE(s)) {
-      s->msg = "Corrupted compressed stream (illegal stream size)";
+      s->msg = "corrupted compressed stream (illegal stream size)";
       return Z_VERSION_ERROR;
     }
    
@@ -691,7 +701,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
         break;
       }
       if (done != (int) s->state->dec_size) {
-        s->msg = "Unable to decompress block stream";
+        s->msg = "unable to decompress block stream";
         return Z_STREAM_ERROR;
       }
     }
@@ -742,15 +752,16 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
   }
   /* success */
   else {
-    return Z_OK;
+    return PROGRESS_OK();
   }
+#undef PROGRESS_OK
 }
 
 int fastlzlibDecompress2(zfast_stream *s, int flush, const int may_buffer) {
   if (ZFAST_IS_DECOMPRESSING(s)) {
     return fastlzlibProcess(s, flush, may_buffer);
   } else {
-    s->msg = "Decompressing function used with a compressing stream";
+    s->msg = "decompressing function used with a compressing stream";
     return Z_STREAM_ERROR;
   }
 }
@@ -763,7 +774,7 @@ int fastlzlibCompress2(zfast_stream *s, int flush, const int may_buffer) {
   if (ZFAST_IS_COMPRESSING(s)) {
     return fastlzlibProcess(s, flush, may_buffer);
   } else {
-    s->msg = "Compressing function used with a decompressing stream";
+    s->msg = "compressing function used with a decompressing stream";
     return Z_STREAM_ERROR;
   }
 }
@@ -825,7 +836,7 @@ int fastlzlibDecompressSync(zfast_stream *s) {
       return Z_DATA_ERROR;
     }
   } else {
-    s->msg = "Decompressing function used with a compressing stream";
+    s->msg = "decompressing function used with a compressing stream";
     return Z_STREAM_ERROR;
   }
 }
