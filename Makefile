@@ -35,8 +35,19 @@ gcc:
 
 
 visualcpp:
-	cl.exe -nologo -MD -LD -O2 -W3 -Zp4 \
-		-D_WIN32_WINNT=0x0400 -DWINVER=0x0400 \
+	cl.exe -nologo -MD -LD -O2 -W3 \
+		-D_WINDOWS -D_WIN32_WINNT=0x0400 -DWINVER=0x0400 \
+		-DFASTLZ_DLL \
 		-Fefastlz.dll \
-		-D_WINDOWS \
+		-implib:fastlz.lib \
 		$(CFILES) -link
+	mt.exe -nologo -manifest fastlz.dll.manifest \
+		-outputresource:fastlz.dll;2
+
+	cl.exe -nologo -MD -O2 -W3 \
+		-D_WINDOWS -D_WIN32_WINNT=0x0400 -DWINVER=0x0400 \
+		-Fefastlzcat.exe \
+		fastlz.lib \
+		fastlzcat.c -link
+	mt.exe -nologo -manifest fastlzcat.exe.manifest \
+		-outputresource:fastlzcat.exe;1

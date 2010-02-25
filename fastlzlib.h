@@ -36,12 +36,20 @@
 #include "conf.h"
 #endif
 #ifndef ZFASTEXTERN
+#ifdef _WIN32
+#ifdef FASTLZ_DLL
+#define ZFASTEXTERN __declspec(dllexport)
+#else
+#define ZFASTEXTERN __declspec(dllimport)
+#endif
+#else
 #define ZFASTEXTERN extern
+#endif
 #endif
 
 /* we are using only zlib types and defines, including z_stream_s */
 #define NO_DUMMY_DECL
-#include <zlib.h>
+#include "zlib.h"
 
 /**
  * The zfast structure is identical to zlib one, except for the "state" opaque
