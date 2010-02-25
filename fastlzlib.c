@@ -29,12 +29,13 @@
   Build:
 
   GCC:
-  gcc -c -fPIC -O3 -g -W -Wall -Wextra -Wdeclaration-after-statement
-  -Wsequence-point -Wno-unused-parameter -Wno-unused-function
-  -Wno-unused-label -Wpointer-arith -Wformat -Wimplicit -Wreturn-type
-  -Wsign-compare -Wno-multichar -Winit-self -Wuninitialized -Werror
-  -D_REENTRANT zlibfast.c -o zlibfast.o
-  gcc -shared -fPIC -O3 -Wl,-O1 zlibfast.o -o zlibfast.so
+  gcc -c -fPIC -O3 -g
+    -W -Wall -Wextra -Werror
+    -D_REENTRANT
+    fastlzlib.c -o fastlzlib.o
+  gcc -shared -fPIC -O3 -Wl,-O1 -Wl,--no-undefined
+    -rdynamic -shared -Wl,-soname=fastlzlib.so
+    fastlzlib.o -o fastlzlib.so.1.0.0
 */
 
 #include <stdio.h>
