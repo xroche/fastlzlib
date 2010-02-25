@@ -22,7 +22,7 @@
 
   Remarks/Bugs:
   FastLZ compression library by Ariya Hidayat (ariya@kde.org)
-  Library encapsulation by Xavier Roche <fastlz@exalead.com>
+  Library encapsulation by Xavier Roche (fastlz@exalead.com)
 */
 
 /*
@@ -61,9 +61,9 @@
   ( BLOCK_SIZE(S) + BLOCK_SIZE(S) / EXPANSION_RATIO + HEADER_SIZE*2)
 
 /* block types */
-#define BLOCK_TYPE_RAW        (0xc0)
-#define BLOCK_TYPE_COMPRESSED (0x0c)
-#define BLOCK_TYPE_BAD_MAGIC  (0xffff)
+#define BLOCK_TYPE_RAW         (0xc0)
+#define BLOCK_TYPE_COMPRESSED  (0x0c)
+#define BLOCK_TYPE_BAD_MAGIC   (0xffff)
 
 /* fake level for decompression */
 #define ZFAST_LEVEL_DECOMPRESS (-2)
@@ -202,8 +202,8 @@ static void fastlzlibReset(zfast_stream *s) {
   s->msg = NULL;
   s->state->inHdrOffs = 0;
   s->state->block_type = 0;
-  s->state->str_size =  0;
-  s->state->dec_size =  0;
+  s->state->str_size = 0;
+  s->state->dec_size = 0;
   s->state->inBuffOffs = 0;
   s->state->outBuffOffs = 0;
 }
@@ -352,6 +352,28 @@ int fastlzlibGetStreamBlockSize(const void* input, int length) {
   return block_size;
 }
 
+int fastlzlibGetStreamInfo(const void* input, int length,
+                           uInt *compressed_size,
+                           uInt *uncompressed_size) {
+  if (input != NULL && compressed_size != NULL && uncompressed_size != NULL) {
+    if (length >= HEADER_SIZE) {
+      uInt block_size = 0;
+      uInt block_type;
+      fastlz_read_header((const Bytef*) input, &block_type, &block_size,
+                         compressed_size, uncompressed_size);
+      if (block_size != 0) {
+        return Z_OK;
+      } else {
+        return Z_DATA_ERROR;
+      }
+    } else {
+      return Z_BUF_ERROR;
+    }
+  } else {
+    return Z_STREAM_ERROR;
+  }
+}
+
 static ZFASTINLINE int fastlz_compress_hdr(const void* input, uInt length,
                                            void* output, uInt output_length,
                                            int block_size, int level,
@@ -428,6 +450,12 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
 
     /* decompressing: header is present */
     if (ZFAST_IS_DECOMPRESSING(s)) {
+
+      /* sync to a block */
+      if (flush == Z_SYNC_FLUSH && s->state->inHdrOffs == 0) {
+        return Z_NEED_DICT;
+      }
+      
       /* if header read in progress or will be in multiple passes (sheesh) */
       if (s->state->inHdrOffs != 0 || s->avail_in < HEADER_SIZE) {
         /* we are to go buffered for the header - check if this is allowed */
@@ -509,8 +537,8 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
       
       /* apply/eat the header and continue */
       s->state->block_type = block_type;
-      s->state->str_size =  str_size;
-      s->state->dec_size =  0;  /* yet unknown */
+      s->state->str_size = str_size;
+      s->state->dec_size = 0;  /* yet unknown */
     }
     
     /* output not buffered yet */
@@ -690,9 +718,9 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
   }
 }
 
-int fastlzlibDecompress2(zfast_stream *s, const int may_buffer) {
+int fastlzlibDecompress2(zfast_stream *s, int flush, const int may_buffer) {
   if (ZFAST_IS_DECOMPRESSING(s)) {
-    return fastlzlibProcess(s, Z_NO_FLUSH, may_buffer);
+    return fastlzlibProcess(s, flush, may_buffer);
   } else {
     s->msg = "Decompressing function used with a compressing stream";
     return Z_STREAM_ERROR;
@@ -700,7 +728,7 @@ int fastlzlibDecompress2(zfast_stream *s, const int may_buffer) {
 }
 
 int fastlzlibDecompress(zfast_stream *s) {
-  return fastlzlibDecompress2(s, 1);
+  return fastlzlibDecompress2(s, Z_NO_FLUSH, 1);
 }
 
 int fastlzlibCompress2(zfast_stream *s, int flush, const int may_buffer) {

@@ -22,7 +22,7 @@
 
   Remarks/Bugs:
   FastLZ compression library by Ariya Hidayat (ariya@kde.org)
-  Library encapsulation by Xavier Roche <fastlz@exalead.com>
+  Library encapsulation by Xavier Roche (fastlz@exalead.com)
 */
 
 #ifndef FASTLZ_FASTLZLIB_ZLIB_H

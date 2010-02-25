@@ -22,7 +22,7 @@
 
   Remarks/Bugs:
   FastLZ compression library by Ariya Hidayat (ariya@kde.org)
-  Library encapsulation by Xavier Roche <fastlz@exalead.com>
+  Library encapsulation by Xavier Roche (fastlz@exalead.com)
 */
 
 #ifndef FASTLZ_FASTLZLIB_H
@@ -31,7 +31,7 @@
 /* extracted from fastlz.h */
 #define FASTLZ_VERSION_STRING "0.1.0"
 
-/* must be the last included file */
+/* optional conf.h file if build with -DFASTLZ_INCLUDE_CONF_H */
 #ifdef FASTLZ_INCLUDE_CONF_H
 #include "conf.h"
 #endif
@@ -45,7 +45,10 @@
 
 /**
  * The zfast structure is identical to zlib one, except for the "state" opaque
- * member
+ * member.
+ * Do not use a stream initialized by fastlzlibDecompressInit() or
+ * fastlzlibCompressInit() with zlib functions, or you will experience very
+ * annoying crashes.
  **/
 typedef z_stream zfast_stream;
 
@@ -54,34 +57,6 @@ typedef z_stream zfast_stream;
  * (zlib equivalent: zlibVersion)
  **/
 ZFASTEXTERN const char * fastlzlibVersion(void);
-
-/**
- * Return the header size, that is, the fixed size of data at the begining of
- * a stream which contains details on the compression type..
- **/
-ZFASTEXTERN int fastlzlibGetHeaderSize(void);
-
-/**
- * Return the block size, that is, a size hint which can be used as a lower
- * bound for output buffer allocation and input buffer reads.
- **/
-ZFASTEXTERN int fastlzlibGetBlockSize(zfast_stream *s);
-
-/**
- * Return the block size is a compressed stream begining with "input".
- * Returns 0 if the stream is invalid or too short.
- * You may use fastlzlibGetHeaderSize() to know how many bytes needs to be
- * read for identifying a stream.
- **/
-ZFASTEXTERN int fastlzlibGetStreamBlockSize(const void* input, int length);
-
-/**
- * Check if the given data is a fastlz compressed stream.
- * Returns Z_OK is the stream is a fastlz compressed stream, Z_BUF_ERROR is the
- * input data size is too small, and Z_DATA_ERROR is the stream is not a
- * fastlz stream.
- **/
-ZFASTEXTERN int fastlzlibIsCompressedStream(const void* input, int length);
 
 /**
  * Initialize a compressing stream.
@@ -140,18 +115,6 @@ ZFASTEXTERN int fastlzlibCompressReset(zfast_stream *s);
 ZFASTEXTERN int fastlzlibDecompressReset(zfast_stream *s);
 
 /**
- * Return the internal memory buffers size.
- * Returns -1 upon error.
- **/
-ZFASTEXTERN int fastlzlibCompressMemory(zfast_stream *s);
-
-/**
- * Return the internal memory buffers size.
- * Returns -1 upon error.
- **/
-ZFASTEXTERN int fastlzlibDecompressMemory(zfast_stream *s);
-
-/**
  * Decompress.
  * (zlib equivalent: inflate)
  **/
@@ -165,7 +128,6 @@ ZFASTEXTERN int fastlzlibCompress(zfast_stream *s, int flush);
 
 /**
  * Decompress.
- * (zlib equivalent: inflate)
  * @arg may_buffer if non zero, accept to process partially a stream by using
  * internal buffers. if zero, input data shortage or output buffer room shortage
  * will return Z_BUF_ERROR. in this case, the client should ensure that the
@@ -173,13 +135,19 @@ ZFASTEXTERN int fastlzlibCompress(zfast_stream *s, int flush);
  * before calling again the function. (the output buffer should be validated
  * before getting this code, to ensure that Z_BUF_ERROR implies a need to read
  * additional input data)
+ * @arg flush if set to Z_SYNC_FLUSH, process until the next block is reached,
+ * and, if reached, return Z_NEED_DICT (a code currently unused outside this
+ * function). this flag can be used to synchronize an input compressed stream
+ * to a block, and seek to a desired position without the need of decompressing
+ * or reading the stream, by skipping each compressed block.
+ * see also s->total_out to get the current stream position, and
+ * fastlzlibGetStreamInfo() to get information on compressed blocks
  **/
-ZFASTEXTERN int fastlzlibDecompress2(zfast_stream *s,
+ZFASTEXTERN int fastlzlibDecompress2(zfast_stream *s, int flush,
                                      const int may_buffer);
 
 /**
  * Compress.
- * (zlib equivalent: deflate)
  * @arg may_buffer if non zero, accept to process partially a stream by using
  * internal buffers. if zero, input data shortage or output buffer room shortage
  * will return Z_BUF_ERROR. in this case, the client should ensure that the
@@ -200,6 +168,58 @@ ZFASTEXTERN int fastlzlibCompress2(zfast_stream *s, int flush,
  * (zlib equivalent: inflateSync)
  **/
 ZFASTEXTERN int fastlzlibDecompressSync(zfast_stream *s);
+
+/**
+ * Return the header size, that is, the fixed size of data at the begining of
+ * a stream which contains details on the compression type..
+ **/
+ZFASTEXTERN int fastlzlibGetHeaderSize(void);
+
+/**
+ * Return the block size, that is, a size hint which can be used as a lower
+ * bound for output buffer allocation and input buffer reads.
+ **/
+ZFASTEXTERN int fastlzlibGetBlockSize(zfast_stream *s);
+
+/**
+ * Return the block size of a compressed stream begining with "input".
+ * Returns 0 if the stream is invalid or too short.
+ * You may use fastlzlibGetHeaderSize() to know how many bytes needs to be
+ * read for identifying a stream.
+ **/
+ZFASTEXTERN int fastlzlibGetStreamBlockSize(const void* input, int length);
+
+/**
+ * Return the block size of a compressed stream begining with "input".
+ * Returns Z_OK if the two members were successfully filles, Z_DATA_ERROR if
+ * the stream is not a valid start of block, Z_BUF_ERROR if the buffer is too
+ * small, and Z_STREAM_ERROR if arguments are invalid (NULL pointer).
+ * You may use fastlzlibGetHeaderSize() to know how many bytes needs to be
+ * read for identifying a stream.
+ **/
+ZFASTEXTERN int fastlzlibGetStreamInfo(const void* input, int length,
+                                       uInt *compressed_size,
+                                       uInt *uncompressed_size);
+
+/**
+ * Check if the given data is a fastlz compressed stream.
+ * Returns Z_OK is the stream is a fastlz compressed stream, Z_BUF_ERROR is the
+ * input data size is too small, and Z_DATA_ERROR is the stream is not a
+ * fastlz stream.
+ **/
+ZFASTEXTERN int fastlzlibIsCompressedStream(const void* input, int length);
+
+/**
+ * Return the internal memory buffers size.
+ * Returns -1 upon error.
+ **/
+ZFASTEXTERN int fastlzlibCompressMemory(zfast_stream *s);
+
+/**
+ * Return the internal memory buffers size.
+ * Returns -1 upon error.
+ **/
+ZFASTEXTERN int fastlzlibDecompressMemory(zfast_stream *s);
 
 /* exported internal fast lz lib functions */
 
