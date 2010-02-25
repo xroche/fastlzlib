@@ -79,28 +79,28 @@ int main(int argc, char **argv) {
 
   /* process args */
   for(i = 1 ; i < argc ; i++) {
-    if (strcasecmp(argv[i], "--compress") == 0) {
+    if (strcmp(argv[i], "--compress") == 0) {
       compress = 1;
     }
-    else if (strcasecmp(argv[i], "--decompress") == 0
-             || strcasecmp(argv[i], "--uncompress") == 0
-             || strcasecmp(argv[i], "-d") == 0) {
+    else if (strcmp(argv[i], "--decompress") == 0
+             || strcmp(argv[i], "--uncompress") == 0
+             || strcmp(argv[i], "-d") == 0) {
       compress = 0;
     }
-    else if (strcasecmp(argv[i], "--list") == 0
-             || strcasecmp(argv[i], "-l") == 0) {
+    else if (strcmp(argv[i], "--list") == 0
+             || strcmp(argv[i], "-l") == 0) {
       list = 1;
     }
-    else if (strcasecmp(argv[i], "--flush") == 0) {
+    else if (strcmp(argv[i], "--flush") == 0) {
       flush = 1;
     }
-    else if (strcasecmp(argv[i], "--fast") == 0) {
+    else if (strcmp(argv[i], "--fast") == 0) {
       perfs = 1;
     }
-    else if (strcasecmp(argv[i], "--normal") == 0) {
+    else if (strcmp(argv[i], "--normal") == 0) {
       perfs = 2;
     }
-    else if (i + 1 < argc && strcasecmp(argv[i], "--inbufsize") == 0) {
+    else if (i + 1 < argc && strcmp(argv[i], "--inbufsize") == 0) {
       int size;
       if (sscanf(argv[i + 1], "%d", &size) == 1) {
         inbufsize = size;
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
       }
       i++;
     }
-    else if (i + 1 < argc && strcasecmp(argv[i], "--outbufsize") == 0) {
+    else if (i + 1 < argc && strcmp(argv[i], "--outbufsize") == 0) {
       int size;
       if (sscanf(argv[i + 1], "%d", &size) == 1) {
         outbufsize = size;
@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
       }
       i++;
     }
-    else if (i + 1 < argc && strcasecmp(argv[i], "--blocksize") == 0) {
+    else if (i + 1 < argc && strcmp(argv[i], "--blocksize") == 0) {
       int size;
       if (sscanf(argv[i + 1], "%d", &size) == 1) {
         block_size = size;
@@ -127,16 +127,16 @@ int main(int argc, char **argv) {
       }
       i++;
     }
-    else if (strcasecmp(argv[i], "-c") == 0
-             || strcasecmp(argv[i], "--stdout") == 0
-             || strcasecmp(argv[i], "--to-stdout") == 0) {
+    else if (strcmp(argv[i], "-c") == 0
+             || strcmp(argv[i], "--stdout") == 0
+             || strcmp(argv[i], "--to-stdout") == 0) {
       output = "-";
     }
-    else if (i + 1 < argc && strcasecmp(argv[i], "--output") == 0) {
+    else if (i + 1 < argc && strcmp(argv[i], "--output") == 0) {
       output = argv[i + 1];
       i++;
     }
-    else if (i + 1 < argc && strcasecmp(argv[i], "--input") == 0) {
+    else if (i + 1 < argc && strcmp(argv[i], "--input") == 0) {
       files[nfiles++] = i;
     }
     else if (argv[i][0] == '-'

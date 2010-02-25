@@ -12,6 +12,10 @@ all:
 clean:
 	rm -f *.o *.so* *.dll
 
+tar:
+	rm -f fastlzlib.tgz
+	tar cvfz fastlzlib.tgz fastlzlib.txt fastlzlib.c fastlzlib.h fastlzlib-zlib.h fastlzcat.c Makefile LICENSE
+
 gcc:
 	gcc -c -fPIC -O3 -g \
 		-W -Wall -Wextra -Werror \
