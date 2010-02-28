@@ -466,11 +466,11 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
   
   /* sanity check for next_in/next_out */
   if (s->next_in == NULL && !ZFAST_INPUT_IS_EMPTY(s)) {
-    s->msg = "Invalid input";
+    s->msg = "invalid input";
     return Z_STREAM_ERROR;
   }
   else if (s->next_out == NULL && !ZFAST_OUTPUT_IS_FULL(s)) {
-    s->msg = "Invalid output";
+    s->msg = "invalid output";
     return Z_STREAM_ERROR;
   }
   
@@ -814,7 +814,7 @@ int fastlzlibDecompressSync(zfast_stream *s) {
 
       /* at least HEADER_SIZE data */
       if (s->avail_in < HEADER_SIZE) {
-        s->msg = "Need more data on input";
+        s->msg = "need more data on input";
         return Z_BUF_ERROR;
       }
         
@@ -842,7 +842,7 @@ int fastlzlibDecompressSync(zfast_stream *s) {
           }
         }
       }
-      s->msg = "No flush point found";
+      s->msg = "no flush point found";
       return Z_DATA_ERROR;
     }
   } else {
