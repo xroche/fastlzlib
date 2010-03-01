@@ -121,21 +121,32 @@ static const char* BLOCK_MAGIC = "FastLZ";
 
 /* opaque structure for "state" zlib structure member */
 struct internal_state {
+  /* magic ; must be BLOCK_MAGIC */
   char magic[8];
-  
-  int level;               /* compression level */
 
+  /* compression level or decompression mode (ZFAST_LEVEL_*) */
+  int level;
+
+  /* buffered header and data read so far (if inHdrOffs != 0) */
   Bytef inHdr[HEADER_SIZE];
   uInt inHdrOffs;
 
+  /* block size ; must be 2**(POWER_BASE+n) with n < 16 */
   uInt block_size;
+  /* block type (BLOCK_TYPE_*) */
   uInt block_type;
+  /* current block stream size (input data block except header) */
   uInt str_size;
+  /* current output stream size (output data block) */
   uInt dec_size;
-  
+
+  /* buffered data input */
   Bytef *inBuff;
+  /* buffered data output */
   Bytef *outBuff;
+  /* buffered data offset in inBuff (iff inBuffOffs < str_size)*/
   uInt inBuffOffs;
+  /* buffered data offset in outBuff (iff outBuffOffs < dec_size)*/
   uInt outBuffOffs;
 };
 
@@ -635,7 +646,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
   /* - header always processed at this point */
   /* - no output buffer data to be processed (outBuffOffs == 0) */
  
-  /* bufferred data: copy as much as possible to inBuff until we have the
+  /* buffered data: copy as much as possible to inBuff until we have the
      block data size */
   if (in == NULL) {
     /* remaining data to copy in input buffer */
@@ -743,7 +754,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
                                              flush_now);
         /* produced size (in outBuff) */
         s->state->dec_size = (uInt) done;
-        /* bufferred */
+        /* buffered */
         s->state->outBuffOffs = 0;
       }
 
