@@ -35,19 +35,24 @@ gcc:
 
 # to be started in a visual studio command prompt
 visualcpp:
-	cl.exe -nologo -MD -LD -O2 -W3 \
+	cl.exe -nologo -c -MD -O2 -W3 \
 		-D_WINDOWS -D_WIN32_WINNT=0x0400 -DWINVER=0x0400 \
+		-D_CRT_SECURE_NO_WARNINGS \
 		-DFASTLZ_DLL \
-		-Fefastlz.dll \
+		-Fofastlz.obj \
+		$(CFILES)
+	link.exe -nologo -dll \
+		-out:fastlz.dll \
 		-implib:fastlz.lib \
-		$(CFILES) -link
+		-DEBUG -PDB:fastlz.pdb \
+		fastlz.obj
 	mt.exe -nologo -manifest fastlz.dll.manifest \
-		-outputresource:fastlz.dll;2
-
+		"-outputresource:fastlz.dll;2"
 	cl.exe -nologo -MD -O2 -W3 \
 		-D_WINDOWS -D_WIN32_WINNT=0x0400 -DWINVER=0x0400 \
+		-D_CRT_SECURE_NO_WARNINGS \
 		-Fefastlzcat.exe \
 		fastlz.lib \
 		fastlzcat.c -link
 	mt.exe -nologo -manifest fastlzcat.exe.manifest \
-		-outputresource:fastlzcat.exe;1
+		"-outputresource:fastlzcat.exe;1"
