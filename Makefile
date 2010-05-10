@@ -10,7 +10,7 @@ all:
 	make gcc
 
 clean:
-	rm -f *.o *.obj *.so* *.dll *.exe *.pdb *.exp *.lib
+	rm -f *.o *.obj *.so* *.dll *.exe *.pdb *.exp *.lib fastlzcat
 
 tar:
 	rm -f fastlzlib.tgz
