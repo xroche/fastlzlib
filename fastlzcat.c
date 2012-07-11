@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
         while(!feof(instream)) {
           int n = fread(buf, 1, inbufsize, instream);
           const int is_eof = feof(instream);
-          if (n > 0) {
+          if (n >= 0) {
 
             /* list mode (scan stream without reading/processing) */
             if (list) {
@@ -285,7 +285,11 @@ int main(int argc, char **argv) {
                 stream.avail_out = outbufsize;
                 if (compress) {
                   success = fastlzlibCompress(&stream,
-                                              is_eof ? Z_FINISH : Z_NO_FLUSH);
+                                              is_eof ? Z_FINISH
+                                              : ( flush
+                                                  ? Z_SYNC_FLUSH
+                                                  : Z_NO_FLUSH )
+                                              );
                 } else {
                   success = fastlzlibDecompress(&stream);
                 }
