@@ -215,6 +215,12 @@ ZFASTEXTERN int fastlzlibGetBlockSize(zfast_stream *s);
 ZFASTEXTERN int fastlzlibGetStreamBlockSize(const void* input, int length);
 
 /**
+ * Return the last error message, if any.
+ * Returns NULL if no specific error message was stored.
+ **/
+ZFASTEXTERN const char* fastlzlibGetLastErrorMessage(zfast_stream *s);
+
+/**
  * Return the block size of a compressed stream begining with "input".
  * Returns Z_OK if the two members were successfully filles, Z_DATA_ERROR if
  * the stream is not a valid start of block, Z_BUF_ERROR if the buffer is too
