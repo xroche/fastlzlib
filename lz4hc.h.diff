@@ -1,0 +1,27 @@
+--- lz4hc.h.orig	2013-01-04 08:46:16.996935713 +0100
++++ lz4hc.h	2013-01-04 15:18:48.477890328 +0100
+@@ -38,8 +38,23 @@
+ extern "C" {
+ #endif
+ 
++/* optional conf.h file if build with -DFASTLZ_INCLUDE_CONF_H */
++#ifdef LZ4_INCLUDE_CONF_H
++#include "conf.h"
++#endif
++#ifndef ZFASTEXTERN
++#ifdef _WIN32
++#ifdef FASTLZ_DLL
++#define ZFASTEXTERN __declspec(dllexport)
++#else
++#define ZFASTEXTERN __declspec(dllimport)
++#endif
++#else
++#define ZFASTEXTERN extern
++#endif
++#endif
+ 
+-int LZ4_compressHC (const char* source, char* dest, int isize);
++ZFASTEXTERN int LZ4_compressHC (const char* source, char* dest, int isize);
+ 
+ /*
+ LZ4_compressHC :
