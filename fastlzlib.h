@@ -1,5 +1,5 @@
 /*  
-  zlib-like interface to FastLZ, the lightning-fast lossless compression library
+  zlib-like interface to fast block compression (LZ4 or FastLZ) libraries
   Copyright (C) 2010 Exalead SA. (http://www.exalead.com/)
   
   Permission is hereby granted, free of charge, to any person obtaining a copy
