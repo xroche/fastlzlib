@@ -1,6 +1,6 @@
 /*
   zlib-like interface to fast block compression (LZ4 or FastLZ) libraries
-  Copyright (C) 2013 Exalead SA. (http://www.exalead.com/)
+  Copyright (C) 2010-2013 Exalead SA. (http://www.exalead.com/)
   
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
