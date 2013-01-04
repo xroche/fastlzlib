@@ -92,6 +92,12 @@
 #define ZFAST_HAS_BUFFERED_OUTPUT(S)                    \
   ( s->state->outBuffOffs < s->state->dec_size )
 
+/* compress stream */
+#define ZFAST_COMPRESS s->state->compress
+
+/* decompress stream */
+#define ZFAST_DECOMPRESS s->state->decompress
+
 /* inlining */
 #ifndef ZFASTINLINE
 #define ZFASTINLINE FASTLZ_INLINE
@@ -148,6 +154,12 @@ struct internal_state {
   uInt inBuffOffs;
   /* buffered data offset in outBuff (iff outBuffOffs < dec_size)*/
   uInt outBuffOffs;
+  
+  /* block compression backend function */
+  int (*compress)(int level, const void* input, int length, void* output);
+
+  /* block decompression backend function */
+  int (*decompress)(const void* input, int length, void* output, int maxout); 
 };
 
 /* our typed internal state */
@@ -254,6 +266,8 @@ static int fastlzlibInit(zfast_stream *s, int block_size) {
     s->state = (zfast_stream_internal*)
       zalloc(s, sizeof(zfast_stream_internal), 1);
     strcpy(s->state->magic, MAGIC);
+    s->state->compress = fastlz_compress_level;
+    s->state->decompress = fastlz_decompress;
     s->state->block_size = (uInt) block_size;
     s->state->inBuff = zalloc(s, BUFFER_BLOCK_SIZE(s), 1);
     s->state->outBuff = zalloc(s, BUFFER_BLOCK_SIZE(s), 1);
@@ -295,6 +309,18 @@ int fastlzlibDecompressInit2(zfast_stream *s, int block_size) {
 
 int fastlzlibDecompressInit(zfast_stream *s) {
   return fastlzlibDecompressInit2(s, DEFAULT_BLOCK_SIZE);
+}
+
+void fastlzlibSetCompress(zfast_stream *s,
+                          int (*compress)(int level, const void* input,
+                                          int length, void* output)) {
+  s->state->compress = compress;
+}
+
+void fastlzlibSetDecompress(zfast_stream *s,
+                            int (*decompress)(const void* input, int length,
+                                              void* output, int maxout)) {
+  s->state->decompress = decompress;
 }
 
 int fastlzlibCompressEnd(zfast_stream *s) {
@@ -424,7 +450,8 @@ int fastlzlibGetStreamInfo(const void* input, int length,
 }
 
 /* helper for fastlz_compress */
-static ZFASTINLINE int fastlz_compress_hdr(const void* input, uInt length,
+static ZFASTINLINE int fastlz_compress_hdr(const zfast_stream *const s,
+                                           const void* input, uInt length,
                                            void* output, uInt output_length,
                                            int block_size, int level,
                                            int flush) {
@@ -435,7 +462,7 @@ static ZFASTINLINE int fastlz_compress_hdr(const void* input, uInt length,
     uInt type;
     /* compress and fill header after */
     if (length > MIN_BLOCK_SIZE) {
-      done = fastlz_compress_level(level, input, length, output_data_start);
+      done = ZFAST_COMPRESS(level, input, length, output_data_start);
       assert(done + HEADER_SIZE*2 <= output_length);
       if (done < length) {
         type = BLOCK_TYPE_COMPRESSED;
@@ -719,7 +746,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
       /* rock'in */
       switch(s->state->block_type) {
       case BLOCK_TYPE_COMPRESSED:
-        done = fastlz_decompress(in, in_size, out, out_size);
+        done = ZFAST_DECOMPRESS(in, in_size, out, out_size);
         break;
       case BLOCK_TYPE_RAW:
         if (out_size >= in_size) {
@@ -746,7 +773,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
 
       /* can compress directly on client memory */
       if (s->avail_out >= estimated_dec_size) {
-        const int done = fastlz_compress_hdr(in, in_size,
+        const int done = fastlz_compress_hdr(s, in, in_size,
                                              s->next_out, estimated_dec_size,
                                              BLOCK_SIZE(s),
                                              zlibLevelToFastlz(s->state->level),
@@ -758,7 +785,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
       }
       /* otherwise in output buffer */
       else {
-        const int done = fastlz_compress_hdr(in, in_size,
+        const int done = fastlz_compress_hdr(s, in, in_size,
                                              s->state->outBuff,
                                              BUFFER_BLOCK_SIZE(s),
                                              BLOCK_SIZE(s),

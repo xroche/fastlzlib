@@ -100,6 +100,26 @@ ZFASTEXTERN int fastlzlibDecompressInit(zfast_stream *s);
 ZFASTEXTERN int fastlzlibDecompressInit2(zfast_stream *s, int block_size);
 
 /**
+ * Set the block compressor function.
+ * The corresponding decompressor should be set using fastlzlibSetDecompress()
+ **/
+ZFASTEXTERN void fastlzlibSetCompress(zfast_stream *s,
+                                      int (*compress)(int level,
+                                                      const void* input,
+                                                      int length,
+                                                      void* output));
+
+/**
+ * Set the block decompressor function.
+ * The corresponding compressor should be set using fastlzlibSetCompress()
+ **/
+ZFASTEXTERN void fastlzlibSetDecompress(zfast_stream *s,
+                                        int (*decompress)(const void* input,
+                                                          int length,
+                                                          void* output,
+                                                          int maxout));
+
+/**
  * Free allocated data.
  * Returns Z_OK upon success.
  * (zlib equivalent: deflateEnd)
