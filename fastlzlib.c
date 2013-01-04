@@ -44,7 +44,14 @@
 #include <assert.h>
 
 #include "fastlzlib.h"
+#ifdef ZFAST_USE_LZ4
+/* use LZ4 */
+#include "lz4.h"
+#include "lz4hc.h"
+#else
+/* use fastLZ */
 #include "fastlz.c"
+#endif
 #undef fastlzlibReset
 
 /* note: the 5% ratio (/20) is not sufficient - add 66 bytes too */
@@ -256,6 +263,30 @@ static ZFASTINLINE int fastlzlibGetBlockSizeLevel(int block_size) {
   return -1;
 }
 
+#ifdef ZFAST_USE_LZ4
+
+/* compression backend for LZ4 */
+static int lz4_backend_compress(int level, const void* input, int length,
+                                void* output) {
+  /* Level 1 is the fastest compression and generally useful for short data. */
+  if (level == 1) {
+    return LZ4_compressHC(input, output, length);
+  }
+  /* Level 2 is slightly slower but it gives better compression ratio. */
+  else {
+    return LZ4_compress(input, output, length);
+  }
+}
+
+/* decompression backend for LZ4 */
+static int lz4_backend_decompress(const void* input, int length, void* output,
+                                  int maxout) {
+  return LZ4_uncompress_unknownOutputSize(input, output, length, maxout);
+  /* return LZ4_uncompress(input, output, maxout); */
+}
+
+#endif
+
 /* initialize private fields */
 static int fastlzlibInit(zfast_stream *s, int block_size) {
   if (s != NULL) {
@@ -266,8 +297,15 @@ static int fastlzlibInit(zfast_stream *s, int block_size) {
     s->state = (zfast_stream_internal*)
       zalloc(s, sizeof(zfast_stream_internal), 1);
     strcpy(s->state->magic, MAGIC);
+#ifdef ZFAST_USE_LZ4
+    /* LZ4 flavor */
+    s->state->compress = lz4_backend_compress;
+    s->state->decompress = lz4_backend_decompress;
+#else
+    /* fastLZ flavor */
     s->state->compress = fastlz_compress_level;
     s->state->decompress = fastlz_decompress;
+#endif
     s->state->block_size = (uInt) block_size;
     s->state->inBuff = zalloc(s, BUFFER_BLOCK_SIZE(s), 1);
     s->state->outBuff = zalloc(s, BUFFER_BLOCK_SIZE(s), 1);

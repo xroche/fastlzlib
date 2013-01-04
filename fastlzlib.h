@@ -46,6 +46,9 @@
 #define ZFASTEXTERN extern
 #endif
 #endif
+#ifndef ZFASTINLINE
+#define ZFASTINLINE
+#endif
 
 /* we are using only zlib types and defines, including z_stream_s */
 #define NO_DUMMY_DECL
@@ -272,7 +275,9 @@ ZFASTEXTERN int fastlzlibCompressMemory(zfast_stream *s);
  **/
 ZFASTEXTERN int fastlzlibDecompressMemory(zfast_stream *s);
 
-/* exported internal fast lz lib functions */
+/* exported internal fast lz lib functions (legacy) */
+
+#ifndef ZFAST_USE_LZ4
 
 /**
  * Compress.
@@ -290,5 +295,7 @@ ZFASTEXTERN int fastlz_decompress(const void* input, int length, void* output,
  **/
 ZFASTEXTERN int fastlz_compress_level(int level, const void* input, int length,
                                       void* output);
+
+#endif
 
 #endif
