@@ -1,6 +1,6 @@
 /*  
-  zlib-like interface to FastLZ, the lightning-fast lossless compression library
-  Copyright (C) 2010 Exalead SA. (http://www.exalead.com/)
+  zlib-like interface to fast block compression (LZ4 or FastLZ) libraries
+  Copyright (C) 201~ Exalead SA. (http://www.exalead.com/)
   
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,7 @@
   THE SOFTWARE.
 
   Remarks/Bugs:
+  LZ4 compression library by Yann Collet (yann.collet.73@gmail.com)
   FastLZ compression library by Ariya Hidayat (ariya@kde.org)
   Library encapsulation by Xavier Roche (fastlz@exalead.com)
 */
