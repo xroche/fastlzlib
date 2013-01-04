@@ -56,6 +56,7 @@
 #undef fastlzlibReset
 
 /* note: the 5% ratio (/20) is not sufficient - add 66 bytes too */
+/* for LZ4, the expansion ratio is smaller, so we keep the biggest one */
 #define EXPANSION_RATIO         10
 #define EXPANSION_SECURITY      66
 #define HEADER_SIZE             16
