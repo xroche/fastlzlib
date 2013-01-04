@@ -3,8 +3,8 @@ Fastlzlib readme file
 What the library does
 ---------------------
 
-Fastlzlib is a zlib-like library created by Exalead SA., using FastLZ,
-the lightning-fast lossless compression library written by Ariya Hidayat.
+Fastlzlib is a zlib-like library created by Exalead SA., using fast block
+compression, such as LZ4 or fastLZ.
 
 The API is nearly identical to the zlib one, and uses the same types and
 error codes. The file "fastlzlib-zlib.h" can even be used for testing purpose,
@@ -63,8 +63,8 @@ The raw stream is uncompressed ; this type is used for blocks too small to be
 compressed (64 bytes or less)
 
 type == BLOCK_TYPE_COMPRESSED
-The raw stream is compressed using FastLZ. See FastLZ reference for more
-information on the algorithm used.
+The raw stream is compressed using a block compression method. See LZ4/FastLZ
+reference for more information on the respective algorithm used.
 
 License
 -------
@@ -91,4 +91,5 @@ Copyright
 ---------
 
 library code is copyright (C) 2010-2013 Exalead SA. (http://www.exalead.com/)
+LZ4 code is copyright (C) 2012 Yann Collet (yann.collet.73@gmail.com)
 fastLZ code is copyright (C) 2007 Ariya Hidayat (ariya@kde.org)
