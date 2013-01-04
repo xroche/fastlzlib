@@ -49,7 +49,7 @@
 #include "lz4.h"
 #include "lz4hc.h"
 #else
-/* use fastLZ */
+/* use fastLZ (direct include) */
 #include "fastlz.c"
 #endif
 #undef fastlzlibReset

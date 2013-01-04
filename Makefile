@@ -36,7 +36,7 @@ gcc:
 
 # lz4 flavor
 	gcc -c -fPIC -O3 -g \
-		-W -Wall -Wextra -Werror \
+		-W -Wall -Wextra -Werror -Wno-unused-function \
 		-D_REENTRANT -DZFAST_USE_LZ4 \
 		$(CFILES_LZ4)
 	gcc -shared -fPIC -O3 -Wl,-O1 -Wl,--no-undefined \

@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
 /* optional conf.h file if build with -DFASTLZ_INCLUDE_CONF_H */
-#ifdef FASTLZ_INCLUDE_CONF_H
+#ifdef LZ4_INCLUDE_CONF_H
 #include "conf.h"
 #endif
 #ifndef ZFASTEXTERN
