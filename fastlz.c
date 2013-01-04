@@ -167,7 +167,7 @@ static FASTLZ_INLINE int FASTLZ_COMPRESSOR(const void* input, int length, void* 
 {
   const flzuint8* ip = (const flzuint8*) input;
   const flzuint8* ip_bound = ip + length - 2;
-  const flzuint8* ip_limit = ip + length - 12;
+  const flzuint8* ip_limit = ip + length - 12 - 1;
   flzuint8* op = (flzuint8*) output;
 
   const flzuint8* htab[HASH_SIZE];
