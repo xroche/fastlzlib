@@ -90,5 +90,5 @@ THE SOFTWARE.
 Copyright
 ---------
 
-library code is copyright (C) 201~ Exalead SA. (http://www.exalead.com/)
+library code is copyright (C) 2013 Exalead SA. (http://www.exalead.com/)
 fastLZ code is copyright (C) 2007 Ariya Hidayat (ariya@kde.org)
