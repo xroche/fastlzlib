@@ -271,13 +271,13 @@ static ZFASTINLINE int fastlzlibGetBlockSizeLevel(int block_size) {
 static int lz4_backend_compress(int level, const void* input, int length,
                                 void* output) {
   /* Level 1 is the fastest compression and generally useful for short data. */
-  if (level == 1) {
+  /*if (level == 1) {
     return LZ4_compressHC(input, output, length);
-  }
+  }*/
   /* Level 2 is slightly slower but it gives better compression ratio. */
-  else {
+  /*else {*/
     return LZ4_compress(input, output, length);
-  }
+  /*}*/
 }
 
 /* decompression backend for LZ4 */
