@@ -45,14 +45,15 @@
 #include <assert.h>
 
 #include "fastlzlib.h"
-#ifdef ZFAST_USE_LZ4
+
 /* use LZ4 */
+#ifdef ZFAST_USE_LZ4
 #include "lz4/lz4.h"
 #include "lz4/lz4hc.h"
-#else
+#endif
+
 /* use fastLZ */
 #include "fastlz/fastlz.h"
-#endif
 #undef fastlzlibReset
 
 /* note: the 5% ratio (/20) is not sufficient - add 66 bytes too */
@@ -293,6 +294,7 @@ static int lz4_backend_decompress(const void* input, int length, void* output,
 /* initialize private fields */
 static int fastlzlibInit(zfast_stream *s, int block_size) {
   if (s != NULL) {
+    int code;
     if (fastlzlibGetBlockSizeLevel(block_size) == -1) {
       s->msg = "block size is invalid";
       return Z_STREAM_ERROR;
@@ -300,15 +302,12 @@ static int fastlzlibInit(zfast_stream *s, int block_size) {
     s->state = (zfast_stream_internal*)
       zalloc(s, sizeof(zfast_stream_internal), 1);
     strcpy(s->state->magic, MAGIC);
-#ifdef ZFAST_USE_LZ4
-    /* LZ4 flavor */
-    s->state->compress = lz4_backend_compress;
-    s->state->decompress = lz4_backend_decompress;
-#else
-    /* fastLZ flavor */
-    s->state->compress = fastlz_compress_level;
-    s->state->decompress = fastlz_decompress;
-#endif
+    s->state->compress = NULL;
+    s->state->decompress = NULL;
+    if ( ( code = fastlzlibSetCompressor(s, COMPRESSOR_DEFAULT) ) != Z_OK) {
+      fastlzlibFree(s);
+      return code;
+    }
     s->state->block_size = (uInt) block_size;
     s->state->inBuff = zalloc(s, BUFFER_BLOCK_SIZE(s), 1);
     s->state->outBuff = zalloc(s, BUFFER_BLOCK_SIZE(s), 1);
@@ -316,8 +315,8 @@ static int fastlzlibInit(zfast_stream *s, int block_size) {
       fastlzlibReset(s);
       return Z_OK;
     }
-    fastlzlibFree(s);
     s->msg = "memory exhausted";
+    fastlzlibFree(s);
   } else {
     return Z_STREAM_ERROR;
   }
@@ -362,6 +361,23 @@ void fastlzlibSetDecompress(zfast_stream *s,
                             int (*decompress)(const void* input, int length,
                                               void* output, int maxout)) {
   s->state->decompress = decompress;
+}
+
+int fastlzlibSetCompressor(zfast_stream *s,
+                           zfast_stream_compressor compressor) {
+#ifdef ZFAST_USE_LZ4
+  if (compressor == COMPRESSOR_LZ4) {
+    fastlzlibSetCompress(s, lz4_backend_compress);
+    fastlzlibSetDecompress(s, lz4_backend_decompress);
+    return Z_OK;
+  }
+#endif
+  if (compressor == COMPRESSOR_FASTLZ) {
+    fastlzlibSetCompress(s, fastlz_compress_level);
+    fastlzlibSetDecompress(s, fastlz_decompress);
+    return Z_OK;
+  }
+  return Z_VERSION_ERROR;
 }
 
 int fastlzlibCompressEnd(zfast_stream *s) {

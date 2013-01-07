@@ -65,6 +65,15 @@
 typedef z_stream zfast_stream;
 
 /**
+ * Backend compressor type.
+ **/
+typedef enum zfast_stream_compressor {
+  COMPRESSOR_FASTLZ,
+  COMPRESSOR_LZ4,
+  COMPRESSOR_DEFAULT = COMPRESSOR_FASTLZ
+} zfast_stream_compressor;
+
+/**
  * Return the fastlz library version.
  * (zlib equivalent: zlibVersion)
  **/
@@ -102,6 +111,14 @@ ZFASTEXTERN int fastlzlibDecompressInit(zfast_stream *s);
  * (zlib equivalent: inflateInit)
  **/
 ZFASTEXTERN int fastlzlibDecompressInit2(zfast_stream *s, int block_size);
+
+/**
+ * Set the block compressor type.
+ * Returns Z_OK upon success, Z_VERSION_ERROR upon if the compressor is not
+ * supported.
+ **/
+ZFASTEXTERN int fastlzlibSetCompressor(zfast_stream *s,
+                                       zfast_stream_compressor compressor);
 
 /**
  * Set the block compressor function.

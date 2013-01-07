@@ -40,6 +40,7 @@ static void usage(char *arg0) {
           "Usage: %s (filename|-) (filename ..)\t#input filename(s) or stdin\n"
           "\t[--output (filename|-)]\t#output filename or stdout\n"
           "\t[--compress|--decompress]\t#mode\n"
+          "\t[--lz4|--fastlz]\t#compression type\n"
           "\t[--fast|--normal]\t#compression speed\n"
           "\t[--inbufsize n]\t#input buffer size (262144)\n"
           "\t[--outbufsize n]\t#output buffer size (1048576)\n"
@@ -72,6 +73,7 @@ int main(int argc, char **argv) {
   int compress = 0;
   int list = 0;
   int flush = 0;
+  zfast_stream_compressor type = COMPRESSOR_FASTLZ;
   int perfs = 2;
   uInt block_size = 262144;
   uInt inbufsize = 1048576;
@@ -94,6 +96,12 @@ int main(int argc, char **argv) {
     }
     else if (strcmp(argv[i], "--flush") == 0) {
       flush = 1;
+    }
+    else if (strcmp(argv[i], "--lz4") == 0) {
+      type = COMPRESSOR_LZ4;
+    }
+    else if (strcmp(argv[i], "--fastlz") == 0) {
+      type = COMPRESSOR_FASTLZ;
     }
     else if (strcmp(argv[i], "--fast") == 0) {
       perfs = 1;
@@ -180,6 +188,10 @@ int main(int argc, char **argv) {
       if (fastlzlibDecompressInit2(&stream, block_size) != Z_OK) {
         flzerror(&stream, "unable to initialize the uncompressor");
       }
+    }
+
+    if (fastlzlibSetCompressor(&stream, type) != Z_OK) {
+      flzerror(&stream, "unable to initialize the specified compressor");
     }
 
     if (output != NULL) {
