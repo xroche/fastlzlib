@@ -1,0 +1,53 @@
+--- fastlz.h.orig	2013-01-07 08:32:40.839627378 +0100
++++ fastlz.h	2013-01-07 08:31:53.088553898 +0100
+@@ -39,6 +39,23 @@
+ extern "C" {
+ #endif
+ 
++/* optional conf.h file if build with -DFASTLZ_INCLUDE_CONF_H */
++#ifdef FASTLZ_INCLUDE_CONF_H
++#include "conf.h"
++#endif
++#ifndef ZFASTEXTERN
++#ifdef _WIN32
++#ifdef FASTLZ_DLL
++#define ZFASTEXTERN __declspec(dllexport)
++#else
++#define ZFASTEXTERN __declspec(dllimport)
++#endif
++#else
++#define ZFASTEXTERN extern
++#endif
++#define ZFASTINLINE
++#endif
++
+ /**
+   Compress a block of data in the input buffer and returns the size of 
+   compressed block. The size of input buffer is specified by length. The 
+@@ -53,7 +70,7 @@
+   The input buffer and the output buffer can not overlap.
+ */
+ 
+-int fastlz_compress(const void* input, int length, void* output);
++ZFASTEXTERN int fastlz_compress(const void* input, int length, void* output);
+ 
+ /**
+   Decompress a block of compressed data and returns the size of the 
+@@ -67,7 +84,7 @@
+   more than what is specified in maxout.
+  */
+ 
+-int fastlz_decompress(const void* input, int length, void* output, int maxout); 
++ZFASTEXTERN int fastlz_decompress(const void* input, int length, void* output, int maxout); 
+ 
+ /**
+   Compress a block of data in the input buffer and returns the size of 
+@@ -91,7 +108,7 @@
+   decompressed using the function fastlz_decompress above.
+ */  
+ 
+-int fastlz_compress_level(int level, const void* input, int length, void* output);
++ZFASTEXTERN int fastlz_compress_level(int level, const void* input, int length, void* output);
+ 
+ #if defined (__cplusplus)
+ }

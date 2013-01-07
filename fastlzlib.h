@@ -276,27 +276,4 @@ ZFASTEXTERN int fastlzlibCompressMemory(zfast_stream *s);
  **/
 ZFASTEXTERN int fastlzlibDecompressMemory(zfast_stream *s);
 
-/* exported internal fast lz lib functions (legacy) */
-
-#ifndef ZFAST_USE_LZ4
-
-/**
- * Compress.
- **/
-ZFASTEXTERN int fastlz_compress(const void* input, int length, void* output);
-
-/**
- * Decompress.
- **/
-ZFASTEXTERN int fastlz_decompress(const void* input, int length, void* output,
-                                  int maxout);
-
-/**
- * Decompress with level.
- **/
-ZFASTEXTERN int fastlz_compress_level(int level, const void* input, int length,
-                                      void* output);
-
-#endif
-
 #endif

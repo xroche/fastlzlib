@@ -4,7 +4,7 @@
 #
 ###############################################################################
 
-CFILES = fastlzlib.c
+CFILES = fastlzlib.c fastlz.c
 CFILES_LZ4 = fastlzlib.c lz4.c lz4hc.c
 
 all:
@@ -21,10 +21,10 @@ gcc:
 	gcc -c -fPIC -O3 -g \
 		-W -Wall -Wextra -Werror \
 		-D_REENTRANT \
-		$(CFILES) -o fastlz.o
+		$(CFILES)
 	gcc -shared -fPIC -O3 -Wl,-O1 -Wl,--no-undefined \
 		-rdynamic -shared -Wl,-soname=libfastlz.so \
-		fastlz.o -o libfastlz.so
+		fastlzlib.o fastlz.o -o libfastlz.so
 
 	gcc -c -fPIC -O3 -g \
 		-W -Wall -Wextra -Werror \

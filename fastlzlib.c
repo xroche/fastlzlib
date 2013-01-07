@@ -50,8 +50,8 @@
 #include "lz4.h"
 #include "lz4hc.h"
 #else
-/* use fastLZ (direct include) */
-#include "fastlz.c"
+/* use fastLZ */
+#include "fastlz.h"
 #endif
 #undef fastlzlibReset
 
@@ -276,7 +276,8 @@ static int lz4_backend_compress(int level, const void* input, int length,
   }*/
   /* Level 2 is slightly slower but it gives better compression ratio. */
   /*else {*/
-    return LZ4_compress(input, output, length);
+  (void) level;
+  return LZ4_compress(input, output, length);
   /*}*/
 }
 
