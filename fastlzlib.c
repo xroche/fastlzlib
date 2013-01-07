@@ -47,11 +47,11 @@
 #include "fastlzlib.h"
 #ifdef ZFAST_USE_LZ4
 /* use LZ4 */
-#include "lz4.h"
-#include "lz4hc.h"
+#include "lz4/lz4.h"
+#include "lz4/lz4hc.h"
 #else
 /* use fastLZ */
-#include "fastlz.h"
+#include "fastlz/fastlz.h"
 #endif
 #undef fastlzlibReset
 

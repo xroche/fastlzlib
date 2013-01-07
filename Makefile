@@ -4,8 +4,8 @@
 #
 ###############################################################################
 
-CFILES = fastlzlib.c fastlz.c
-CFILES_LZ4 = fastlzlib.c lz4.c lz4hc.c
+CFILES = fastlzlib.c fastlz/fastlz.c
+CFILES_LZ4 = fastlzlib.c lz4/lz4.c lz4/lz4hc.c
 
 all:
 	make gcc
