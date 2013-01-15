@@ -447,10 +447,6 @@ static ZFASTINLINE void outSeek(zfast_stream *s, uInt offs) {
   s->total_out += offs;
 }
 
-static ZFASTINLINE int zlibLevelToFastlz(int level) {
-  return level <= Z_BEST_SPEED ? 1 : 2;
-}
-
 /* write an header to "dest" */
 static ZFASTINLINE int fastlz_write_header(Bytef* dest,
                                            uInt type,
