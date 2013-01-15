@@ -19,7 +19,7 @@ tar:
 gcc:
 	gcc -c -fPIC -O3 -g \
 		-W -Wall -Wextra -Werror -Wno-unused-function \
-		-D_REENTRANT -DZFAST_USE_LZ4 \
+		-D_REENTRANT -DZFAST_USE_LZ4 -DZFAST_USE_FASTLZ \
 		$(CFILES)
 	gcc -shared -fPIC -O3 -Wl,-O1 -Wl,--no-undefined \
 		-rdynamic -shared -Wl,-soname=libfastlz.so \
@@ -38,7 +38,7 @@ visualcpp:
 	cl.exe -nologo -c -MD -O2 -W3 \
 		-D_WINDOWS -D_WIN32_WINNT=0x0400 -DWINVER=0x0400 \
 		-D_CRT_SECURE_NO_WARNINGS \
-		-DFASTLZ_DLL -DZFAST_USE_LZ4 \
+		-DFASTLZ_DLL -DZFAST_USE_LZ4  -DZFAST_USE_FASTLZ \
 		$(CFILES)
 	link.exe -nologo -dll \
 		-out:fastlz.dll \

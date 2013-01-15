@@ -53,7 +53,11 @@
 #endif
 
 /* use fastLZ */
+#ifdef ZFAST_USE_FASTLZ
 #include "fastlz/fastlz.h"
+#endif
+
+/* undefined because we use the internal one */
 #undef fastlzlibReset
 
 /* note: the 5% ratio (/20) is not sufficient - add 66 bytes too */
@@ -271,15 +275,12 @@ static ZFASTINLINE int fastlzlibGetBlockSizeLevel(int block_size) {
 /* compression backend for LZ4 */
 static int lz4_backend_compress(int level, const void* input, int length,
                                 void* output) {
-  /* Level 1 is the fastest compression and generally useful for short data. */
-  /*if (level == 1) {
+  if (level == Z_BEST_COMPRESSION) {
     return LZ4_compressHC(input, output, length);
-  }*/
-  /* Level 2 is slightly slower but it gives better compression ratio. */
-  /*else {*/
-  (void) level;
-  return LZ4_compress(input, output, length);
-  /*}*/
+  }
+  else {
+    return LZ4_compress(input, output, length);
+  }
 }
 
 /* decompression backend for LZ4 */
@@ -288,6 +289,21 @@ static int lz4_backend_decompress(const void* input, int length, void* output,
   return LZ4_uncompress_unknownOutputSize(input, output, length, maxout);
   /* return LZ4_uncompress(input, output, maxout); */
 }
+
+#endif
+
+#ifdef ZFAST_USE_FASTLZ
+
+/* compression backend for FastLZ (level adjustment) */
+static int fastlz_backend_compress(int level, const void* input, int length,
+                                   void* output) {
+  /* Level 1 is the fastest compression and generally useful for short data.
+     Level 2 is slightly slower but it gives better compression ratio. */
+  const int l = level <= Z_BEST_SPEED ? 1 : 2;
+  return fastlz_compress_level(l, input, length, output);
+}
+
+#define fastlz_backend_decompress fastlz_decompress
 
 #endif
 
@@ -372,11 +388,13 @@ int fastlzlibSetCompressor(zfast_stream *s,
     return Z_OK;
   }
 #endif
+#ifdef ZFAST_USE_FASTLZ
   if (compressor == COMPRESSOR_FASTLZ) {
-    fastlzlibSetCompress(s, fastlz_compress_level);
-    fastlzlibSetDecompress(s, fastlz_decompress);
+    fastlzlibSetCompress(s, fastlz_backend_compress);
+    fastlzlibSetDecompress(s, fastlz_backend_decompress);
     return Z_OK;
   }
+#endif
   return Z_VERSION_ERROR;
 }
 
@@ -833,7 +851,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
         const int done = fastlz_compress_hdr(s, in, in_size,
                                              s->next_out, estimated_dec_size,
                                              BLOCK_SIZE(s),
-                                             zlibLevelToFastlz(s->state->level),
+                                             s->state->level,
                                              flush_now);
         /* seek output */
         outSeek(s, done);
@@ -846,7 +864,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
                                              s->state->outBuff,
                                              BUFFER_BLOCK_SIZE(s),
                                              BLOCK_SIZE(s),
-                                             zlibLevelToFastlz(s->state->level),
+                                             s->state->level,
                                              flush_now);
         /* produced size (in outBuff) */
         s->state->dec_size = (uInt) done;
