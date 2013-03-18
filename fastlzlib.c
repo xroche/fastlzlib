@@ -258,6 +258,8 @@ static void fastlzlibReset(zfast_stream *s) {
   s->state->dec_size = 0;
   s->state->inBuffOffs = 0;
   s->state->outBuffOffs = 0;
+  s->total_in = 0;
+  s->total_out = 0;
 }
 
 static ZFASTINLINE int fastlzlibGetBlockSizeLevel(int block_size) {
