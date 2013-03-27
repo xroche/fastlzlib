@@ -55,6 +55,10 @@
 #define NO_DUMMY_DECL
 #include "zlib.h"
 
+#if defined (__cplusplus)
+extern "C" {
+#endif
+
 /**
  * The zfast structure is identical to zlib one, except for the "state" opaque
  * member.
@@ -292,5 +296,9 @@ ZFASTEXTERN int fastlzlibCompressMemory(zfast_stream *s);
  * Returns -1 upon error.
  **/
 ZFASTEXTERN int fastlzlibDecompressMemory(zfast_stream *s);
+
+#if defined (__cplusplus)
+}
+#endif
 
 #endif
