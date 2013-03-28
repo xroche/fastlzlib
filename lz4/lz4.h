@@ -54,19 +54,21 @@ extern "C" {
 #define ZFASTINLINE
 #endif
 
-//**************************************
-// Compiler Options
-//**************************************
+/***************************************
+  Compiler Options
+ **************************************/
 #ifndef LZ4_INCLUDE_CONF_H
-#if defined(_MSC_VER) && !defined(__cplusplus)   // Visual Studio
-#  define inline __inline           // Visual is not C99, but supports some kind of inline
+  /* Visual Studio */
+#if ((defined(_MSC_VER)) && (!defined(__cplusplus)))
+#  undef ZFASTINLINE
+#  define ZFASTINLINE __inline           // Visual is not C99, but supports some kind of inline
 #endif
 #endif
 
 
-//****************************
-// Simple Functions
-//****************************
+/****************************
+  Simple Functions
+ ****************************/
 
 ZFASTEXTERN int LZ4_compress   (const char* source, char* dest, int isize);
 ZFASTEXTERN int LZ4_uncompress (const char* source, char* dest, int osize);
@@ -92,11 +94,11 @@ LZ4_uncompress() :
 */
 
 
-//****************************
-// Advanced Functions
-//****************************
+/****************************
+  Advanced Functions
+ ****************************/
 
-static inline int LZ4_compressBound(int isize)   { return ((isize) + ((isize)/255) + 16); }
+static ZFASTINLINE int LZ4_compressBound(int isize)   { return ((isize) + ((isize)/255) + 16); }
 #define           LZ4_COMPRESSBOUND(    isize)            ((isize) + ((isize)/255) + 16)
 
 /*

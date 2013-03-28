@@ -1,6 +1,6 @@
---- lz4.h.orig	2013-03-27 11:54:15.408398508 +0100
-+++ lz4.h	2013-03-27 11:59:06.235173196 +0100
-@@ -37,21 +37,39 @@
+--- lz4.h.orig	2013-03-27 13:04:54.792931974 +0100
++++ lz4.h	2013-03-28 08:27:30.997919652 +0100
+@@ -37,21 +37,41 @@
  extern "C" {
  #endif
  
@@ -21,19 +21,29 @@
 +#define ZFASTINLINE
 +#endif
  
- //**************************************
- // Compiler Options
- //**************************************
+-//**************************************
+-// Compiler Options
+-//**************************************
+-#if defined(_MSC_VER) && !defined(__cplusplus)   // Visual Studio
+-#  define inline __inline           // Visual is not C99, but supports some kind of inline
++/***************************************
++  Compiler Options
++ **************************************/
 +#ifndef LZ4_INCLUDE_CONF_H
- #if defined(_MSC_VER) && !defined(__cplusplus)   // Visual Studio
- #  define inline __inline           // Visual is not C99, but supports some kind of inline
- #endif
++  /* Visual Studio */
++#if ((defined(_MSC_VER)) && (!defined(__cplusplus)))
++#  undef ZFASTINLINE
++#  define ZFASTINLINE __inline           // Visual is not C99, but supports some kind of inline
 +#endif
+ #endif
  
  
- //****************************
- // Simple Functions
- //****************************
+-//****************************
+-// Simple Functions
+-//****************************
++/****************************
++  Simple Functions
++ ****************************/
  
 -int LZ4_compress   (const char* source, char* dest, int isize);
 -int LZ4_uncompress (const char* source, char* dest, int osize);
@@ -42,7 +52,23 @@
  
  /*
  LZ4_compress() :
-@@ -94,7 +112,7 @@
+@@ -74,11 +94,11 @@
+ */
+ 
+ 
+-//****************************
+-// Advanced Functions
+-//****************************
++/****************************
++  Advanced Functions
++ ****************************/
+ 
+-static inline int LZ4_compressBound(int isize)   { return ((isize) + ((isize)/255) + 16); }
++static ZFASTINLINE int LZ4_compressBound(int isize)   { return ((isize) + ((isize)/255) + 16); }
+ #define           LZ4_COMPRESSBOUND(    isize)            ((isize) + ((isize)/255) + 16)
+ 
+ /*
+@@ -94,7 +114,7 @@
  */
  
  
@@ -51,7 +77,7 @@
  
  /*
  LZ4_compress_limitedOutput() :
-@@ -109,7 +127,7 @@
+@@ -109,7 +129,7 @@
  */
  
  

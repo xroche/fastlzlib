@@ -89,6 +89,11 @@
 #  define LZ4_FORCE_SW_BITCOUNT
 #endif
 
+// AIX
+#if defined(_AIX)
+#  define LZ4_FORCE_UNALIGNED_ACCESS 1
+#endif
+
 
 //**************************************
 // Compiler Options
