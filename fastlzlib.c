@@ -288,7 +288,7 @@ static int lz4_backend_compress(int level, const void* input, int length,
 /* decompression backend for LZ4 */
 static int lz4_backend_decompress(const void* input, int length, void* output,
                                   int maxout) {
-  return LZ4_uncompress_unknownOutputSize(input, output, length, maxout);
+  return LZ4_decompress_safe(input, output, length, maxout);
   /* return LZ4_uncompress(input, output, maxout); */
 }
 
