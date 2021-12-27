@@ -57,6 +57,10 @@
 #include "fastlz/fastlz.h"
 #endif
 
+#ifdef ZFAST_USE_LZFSE
+#include "lzfse/src/lzfse.h"
+#endif
+
 /* undefined because we use the internal one */
 #undef fastlzlibReset
 
@@ -309,6 +313,37 @@ static int fastlz_backend_compress(int level, const void* input, int length,
 
 #endif
 
+
+#ifdef ZFAST_USE_LZFSE
+
+/* compression backend for LZFSE */
+/*   if compressed data are greather than input (incompressible data), 
+            lzfse_encode_buffer return 0
+            fastlzlib wait length to decide store a RAW block, so we transform return value */
+static int lzfse_backend_compress(int level, const void* input, int length,
+                                  void* output) {
+  void* scratch_buffer = (void*)malloc(lzfse_encode_scratch_size());
+  if (scratch_buffer == NULL)
+    return 0;
+  int size_compressed = (int)lzfse_encode_buffer(output, (size_t)length, input, (size_t)length, scratch_buffer);
+  free(scratch_buffer);
+  return (size_compressed == 0) ? length : size_compressed;
+}
+
+/* decompression backend for LZFSE */
+static int lzfse_backend_decompress(const void* input, int length, void* output,
+                                    int maxout) {
+  int size_decoded;
+  void* scratch_buffer = (void*)malloc(lzfse_decode_scratch_size());
+  if (scratch_buffer == NULL)
+    return 0;
+  size_decoded = lzfse_decode_buffer(output, maxout, input, length, scratch_buffer);
+  free(scratch_buffer);
+  return size_decoded;
+  /* return LZ4_uncompress(input, output, maxout); */
+}
+#endif
+
 /* initialize private fields */
 static int fastlzlibInit(zfast_stream *s, int block_size) {
   if (s != NULL) {
@@ -394,6 +429,13 @@ int fastlzlibSetCompressor(zfast_stream *s,
   if (compressor == COMPRESSOR_FASTLZ) {
     fastlzlibSetCompress(s, fastlz_backend_compress);
     fastlzlibSetDecompress(s, fastlz_backend_decompress);
+    return Z_OK;
+  }
+#endif
+#ifdef ZFAST_USE_LZFSE
+  if (compressor == COMPRESSOR_LZFSE) {
+    fastlzlibSetCompress(s, lzfse_backend_compress);
+    fastlzlibSetDecompress(s, lzfse_backend_decompress);
     return Z_OK;
   }
 #endif

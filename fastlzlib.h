@@ -74,6 +74,7 @@ typedef z_stream zfast_stream;
 typedef enum zfast_stream_compressor {
   COMPRESSOR_FASTLZ,
   COMPRESSOR_LZ4,
+  COMPRESSOR_LZFSE,
   COMPRESSOR_DEFAULT = COMPRESSOR_FASTLZ
 } zfast_stream_compressor;
 
