@@ -133,7 +133,8 @@ ZFASTEXTERN void fastlzlibSetCompress(zfast_stream *s,
                                       int (*compress)(int level,
                                                       const void* input,
                                                       int length,
-                                                      void* output));
+                                                      void* output,
+                                                      int maxout));
 
 /**
  * Set the block decompressor function.
