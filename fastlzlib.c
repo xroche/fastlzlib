@@ -321,7 +321,7 @@ static int fastlz_backend_compress(int level, const void* input, int length,
             lzfse_encode_buffer return 0
             fastlzlib wait length to decide store a RAW block, so we transform return value */
 static int lzfse_backend_compress(int level, const void* input, int length,
-                                  void* output) {
+                                  void* output, int maxout) {
   void* scratch_buffer = (void*)malloc(lzfse_encode_scratch_size());
   if (scratch_buffer == NULL)
     return 0;
