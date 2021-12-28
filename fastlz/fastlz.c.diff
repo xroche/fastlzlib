@@ -1,20 +1,16 @@
---- fastlz.c.orig	2013-01-07 08:42:22.000000000 +0100
-+++ fastlz.c	2013-01-07 08:42:13.000000000 +0100
-@@ -24,6 +24,8 @@
-   THE SOFTWARE.
- */
- 
-+#include "fastlz.h"
-+
- #if !defined(FASTLZ__COMPRESSOR) && !defined(FASTLZ_DECOMPRESSOR)
- 
- /*
-@@ -167,7 +169,7 @@
- {
-   const flzuint8* ip = (const flzuint8*) input;
-   const flzuint8* ip_bound = ip + length - 2;
--  const flzuint8* ip_limit = ip + length - 12;
-+  const flzuint8* ip_limit = ip + length - 12 - 1;
-   flzuint8* op = (flzuint8*) output;
- 
-   const flzuint8* htab[HASH_SIZE];
+--- fastlz.c.orig	2021-12-28 17:51:44.565684245 +0100
++++ fastlz.c	2021-12-28 17:55:28.873881570 +0100
+@@ -89,10 +89,13 @@
+         break;
+       case 3:
+         *dest++ = *src++;
++        /* fallthrough */
+       case 2:
+         *dest++ = *src++;
++        /* fallthrough */
+       case 1:
+         *dest++ = *src++;
++        /* fallthrough */
+       case 0:
+         break;
+     }

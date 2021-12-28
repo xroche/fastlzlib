@@ -4,9 +4,10 @@
 #
 ###############################################################################
 
-FASTLZLIB_SRCS = fastlzlib.c fastlz/fastlz.c
+FASTLZLIB_SRCS = fastlzlib.c
+FASTLZ_SRCS := $(sort $(wildcard fastlz/*.c))
 LZ4_SRCS := $(sort $(wildcard lz4/*.c))
-SRCS = ${FASTLZLIB_SRCS} ${LZ4_SRCS}
+SRCS = ${FASTLZLIB_SRCS} ${FASTLZ_SRCS} ${LZ4_SRCS}
 
 TARGET_LIB = libfastlz.so
 OBJS = $(SRCS:.c=.o)
