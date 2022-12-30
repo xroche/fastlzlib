@@ -174,7 +174,7 @@ struct internal_state {
   uInt outBuffOffs;
   
   /* block compression backend function */
-  int (*compress)(int level, const void* input, int length, void* output);
+  int (*compress)(int level, const void* input, int length, void* output, int maxout);
 
   /* block decompression backend function */
   int (*decompress)(const void* input, int length, void* output, int maxout); 
@@ -280,13 +280,12 @@ static ZFASTINLINE int fastlzlibGetBlockSizeLevel(int block_size) {
 
 /* compression backend for LZ4 */
 static int lz4_backend_compress(int level, const void* input, int length,
-                                void* output) {
-  if (level == Z_BEST_COMPRESSION) {
-    return LZ4_compressHC(input, output, length);
+                                void* output, int maxout) {
+  const int lz4Level = LZ4HC_CLEVEL_MIN + (level * (LZ4HC_CLEVEL_MAX - LZ4HC_CLEVEL_MIN))/Z_BEST_COMPRESSION;
+  if (lz4Level < LZ4HC_CLEVEL_MAX) {
+    return LZ4_compress_HC(input, output, length, maxout, lz4Level);
   }
-  else {
-    return LZ4_compress(input, output, length);
-  }
+  return LZ4_compress_default(input, output, length, maxout);
 }
 
 /* decompression backend for LZ4 */
@@ -302,7 +301,8 @@ static int lz4_backend_decompress(const void* input, int length, void* output,
 
 /* compression backend for FastLZ (level adjustment) */
 static int fastlz_backend_compress(int level, const void* input, int length,
-                                   void* output) {
+                                   void* output, int maxout) {
+  (void) maxout;
   /* Level 1 is the fastest compression and generally useful for short data.
      Level 2 is slightly slower but it gives better compression ratio. */
   const int l = level <= Z_BEST_SPEED ? 1 : 2;
@@ -321,7 +321,7 @@ static int fastlz_backend_compress(int level, const void* input, int length,
             lzfse_encode_buffer return 0
             fastlzlib wait length to decide store a RAW block, so we transform return value */
 static int lzfse_backend_compress(int level, const void* input, int length,
-                                  void* output) {
+                                  void* output, int maxout) {
   void* scratch_buffer = (void*)malloc(lzfse_encode_scratch_size());
   if (scratch_buffer == NULL)
     return 0;
@@ -406,7 +406,8 @@ int fastlzlibDecompressInit(zfast_stream *s) {
 
 void fastlzlibSetCompress(zfast_stream *s,
                           int (*compress)(int level, const void* input,
-                                          int length, void* output)) {
+                                          int length, void* output,
+                                          int maxout)) {
   s->state->compress = compress;
 }
 
@@ -574,10 +575,11 @@ static ZFASTINLINE int fastlz_compress_hdr(const zfast_stream *const s,
   Bytef*const output_start = (Bytef*) output;
   if (length > 0) {
     void*const output_data_start = &output_start[HEADER_SIZE];
+    const uInt output_data_max = output_length - HEADER_SIZE;
     uInt type;
     /* compress and fill header after */
     if (length > MIN_BLOCK_SIZE) {
-      done = ZFAST_COMPRESS(level, input, length, output_data_start);
+      done = ZFAST_COMPRESS(level, input, length, output_data_start, output_data_max);
       assert(done + HEADER_SIZE*2 <= output_length);
       if (done < length) {
         type = BLOCK_TYPE_COMPRESSED;

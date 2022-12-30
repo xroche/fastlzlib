@@ -4,34 +4,34 @@
 #
 ###############################################################################
 
-CFILES = fastlzlib.c lz4/lz4.c lz4/lz4hc.c fastlz/fastlz.c
+FASTLZLIB_SRCS = fastlzlib.c
+FASTLZ_SRCS := $(sort $(wildcard fastlz/*.c))
+LZ4_SRCS := $(sort $(wildcard lz4/*.c))
+SRCS = ${FASTLZLIB_SRCS} ${FASTLZ_SRCS} ${LZ4_SRCS}
 
-all:
-	make gcc
+TARGET_LIB = libfastlz.so
+OBJS = $(SRCS:.c=.o)
 
+CFLAGS = -fPIC -O3 -g -W -Wall -Wextra -Werror -Wno-unused-function -pthread -DZFAST_USE_LZ4 -DZFAST_USE_FASTLZ
+LDFLAGS = -shared -rdynamic
+
+RM = rm -f
+
+all: fastlzcat
+
+${TARGET_LIB}: $(OBJS)
+	$(CC) ${LDFLAGS} -Wl,-soname=libfastlz.so -o $@ $^
+
+fastlzcat: ${TARGET_LIB} fastlzcat.o
+	$(CC) -o $@ $^ -L. -lfastlz
+
+.PHONY: clean
 clean:
-	rm -f *.o *.obj *.so* *.dll *.exe *.pdb *.exp *.lib fastlzcat
+	-${RM} $(OBJS) *.o *.obj *.so* *.dll *.exe *.pdb *.exp *.lib fastlzcat
 
 tar:
 	rm -f fastlzlib.tgz
 	tar cvfz fastlzlib.tgz fastlzlib.txt fastlzlib.c fastlzlib.h fastlzlib-zlib.h fastlzcat.c Makefile LICENSE
-
-gcc:
-	gcc -c -fPIC -O3 -g \
-		-W -Wall -Wextra -Werror -Wno-unused-function \
-		-D_REENTRANT -DZFAST_USE_LZ4 -DZFAST_USE_FASTLZ \
-		$(CFILES)
-	gcc -shared -fPIC -O3 -Wl,-O1 -Wl,--no-undefined \
-		-rdynamic -shared -Wl,-soname=libfastlz.so \
-		fastlzlib.o fastlz.o lz4.o lz4hc.o -o libfastlz.so
-
-	gcc -c -fPIC -O3 -g \
-		-W -Wall -Wextra -Werror -Wno-unused-function \
-		-D_REENTRANT \
-		fastlzcat.c -o fastlzcat.o
-	gcc -fPIC -O3 -Wl,-O1 \
-		-lfastlz -L. \
-		fastlzcat.o -o fastlzcat
 
 # to be started in a visual studio command prompt
 visualcpp:
@@ -39,7 +39,7 @@ visualcpp:
 		-D_WINDOWS -D_WIN32_WINNT=0x0400 -DWINVER=0x0400 \
 		-D_CRT_SECURE_NO_WARNINGS \
 		-DFASTLZ_DLL -DZFAST_USE_LZ4  -DZFAST_USE_FASTLZ \
-		$(CFILES)
+		$(SRCS)
 	link.exe -nologo -dll \
 		-out:fastlz.dll \
 		-implib:fastlz.lib \

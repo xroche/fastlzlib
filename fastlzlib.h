@@ -29,9 +29,6 @@
 #ifndef FASTLZ_FASTLZLIB_H
 #define FASTLZ_FASTLZLIB_H
 
-/* extracted from fastlz.h */
-#define FASTLZ_VERSION_STRING "0.1.0"
-
 /* optional conf.h file if build with -DFASTLZ_INCLUDE_CONF_H */
 #ifdef FASTLZ_INCLUDE_CONF_H
 #include "conf.h"
@@ -133,7 +130,8 @@ ZFASTEXTERN void fastlzlibSetCompress(zfast_stream *s,
                                       int (*compress)(int level,
                                                       const void* input,
                                                       int length,
-                                                      void* output));
+                                                      void* output,
+                                                      int maxout));
 
 /**
  * Set the block decompressor function.
